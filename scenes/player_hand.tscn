@@ -1,0 +1,46 @@
+[gd_scene load_steps=2 format=3 uid="uid://lb3wfdukkw5e"]
+
+[ext_resource type="PackedScene" uid="uid://denrvbd0f4xji" path="res://scenes/cards.tscn" id="1_4moqc"]
+
+[node name="PlayerHand" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="cards" parent="." instance=ExtResource("1_4moqc")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.084375
+anchor_top = 0.7814815
+anchor_right = 0.084375
+anchor_bottom = 0.7814815
+
+[node name="cards2" parent="." instance=ExtResource("1_4moqc")]
+z_index = -20
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.21458334
+anchor_top = 0.7740741
+anchor_right = 0.21458334
+anchor_bottom = 0.7740741
+
+[node name="cards3" parent="." instance=ExtResource("1_4moqc")]
+z_index = -40
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.328125
+anchor_top = 0.7740741
+anchor_right = 0.328125
+anchor_bottom = 0.7740741
+
+[node name="cards4" parent="." instance=ExtResource("1_4moqc")]
+z_index = -60
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.45104167
+anchor_top = 0.7740741
+anchor_right = 0.45104167
+anchor_bottom = 0.7740741

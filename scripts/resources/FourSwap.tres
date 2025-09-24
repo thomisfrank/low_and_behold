@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CustomCardData" load_steps=4 format=3 uid="uid://bns5vmla4ivp6"]
+
+[ext_resource type="Texture2D" uid="uid://djecb80tl3bvw" path="res://assets/card_resources/FrontFrame.png" id="1_3wu0e"]
+[ext_resource type="Script" uid="uid://mhehyjydjbrj" path="res://scripts/CardData.gd" id="1_jkbmh"]
+[ext_resource type="Texture2D" uid="uid://d4gm834l2y443" path="res://assets/icons/swap.png" id="2_j11c8"]
+
+[resource]
+script = ExtResource("1_jkbmh")
+card_name = "Four Draw"
+icon = ExtResource("2_j11c8")
+color_a = Color(0.64705884, 0.7372549, 0.18039216, 1)
+color_b = Color(0.14901961, 0.68235296, 0.37254903, 1)
+card_frame = ExtResource("1_3wu0e")
+effect_value = 4

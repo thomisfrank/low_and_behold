@@ -1,0 +1,39 @@
+[gd_scene load_steps=6 format=3 uid="uid://wbqyylucvb6b"]
+
+[ext_resource type="Shader" uid="uid://dam0xy0gi1pqr" path="res://scripts/shaders/active_background.gdshader" id="1_5lasd"]
+[ext_resource type="Texture2D" uid="uid://cvwxrtef3vydl" path="res://assets/backgrounds/GreenCheckeredLandscape.png" id="1_6s6kh"]
+[ext_resource type="Texture2D" uid="uid://bj4ycv8pfrqj6" path="res://assets/backgrounds/GreenCheckeredPortrait.png" id="2_w6hto"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_egioa"]
+shader = ExtResource("1_5lasd")
+shader_parameter/scroll_speed = Vector2(0.002, 0.002)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5lasd"]
+shader = ExtResource("1_5lasd")
+shader_parameter/scroll_speed = Vector2(0.005, 0.005)
+
+[node name="backgrounds" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="Landscape" type="AspectRatioContainer" parent="."]
+layout_mode = 0
+
+[node name="GreenCheckeredLandscape" type="TextureRect" parent="Landscape"]
+material = SubResource("ShaderMaterial_egioa")
+layout_mode = 2
+texture = ExtResource("1_6s6kh")
+stretch_mode = 1
+
+[node name="Portrait" type="AspectRatioContainer" parent="."]
+visible = false
+layout_mode = 0
+offset_right = 440.0
+offset_bottom = 1000.0
+
+[node name="GreenCheckeredPortrait" type="TextureRect" parent="Portrait"]
+material = SubResource("ShaderMaterial_5lasd")
+custom_minimum_size = Vector2(440, 1000)
+layout_mode = 2
+texture = ExtResource("2_w6hto")
+stretch_mode = 1

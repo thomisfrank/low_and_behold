@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CustomCardData" load_steps=4 format=3 uid="uid://cmtlnlb5pfugn"]
+
+[ext_resource type="Script" uid="uid://mhehyjydjbrj" path="res://scripts/CardData.gd" id="1_1cj54"]
+[ext_resource type="Texture2D" uid="uid://djecb80tl3bvw" path="res://assets/card_resources/FrontFrame.png" id="1_hob6p"]
+[ext_resource type="Texture2D" uid="uid://d4gm834l2y443" path="res://assets/icons/swap.png" id="1_rkicd"]
+
+[resource]
+script = ExtResource("1_1cj54")
+card_name = "Ten Swap"
+icon = ExtResource("1_rkicd")
+color_a = Color(0.9647059, 0.47058824, 0.41960785, 1)
+color_b = Color(0.90588236, 0.29803923, 0.23529412, 1)
+card_frame = ExtResource("1_hob6p")
+effect_value = 10
