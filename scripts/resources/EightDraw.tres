@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CustomCardData" load_steps=4 format=3 uid="uid://pmx82arrxgwp"]
+
+[ext_resource type="Texture2D" uid="uid://b0v76y6x4qwme" path="res://assets/icons/draw.png" id="1_blun4"]
+[ext_resource type="Texture2D" uid="uid://djecb80tl3bvw" path="res://assets/card_resources/FrontFrame.png" id="1_cw4gt"]
+[ext_resource type="Script" uid="uid://mhehyjydjbrj" path="res://scripts/CardData.gd" id="1_fya03"]
+
+[resource]
+script = ExtResource("1_fya03")
+card_name = "Eight Draw"
+icon = ExtResource("1_blun4")
+color_a = Color(0.92941177, 0.5764706, 0.13333334, 1)
+color_b = Color(0.94509804, 0.76862746, 0.05882353, 1)
+card_frame = ExtResource("1_cw4gt")
+effect_type = 1
+effect_value = 8

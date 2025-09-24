@@ -1,0 +1,62 @@
+[gd_scene load_steps=5 format=3 uid="uid://d2pypsgvojf3o"]
+
+[ext_resource type="PackedScene" uid="uid://denrvbd0f4xji" path="res://scenes/cards.tscn" id="1"]
+[ext_resource type="Script" uid="uid://bqa6e67p8xdca" path="res://scripts/Deck.gd" id="2"]
+[ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="3_gdbsr"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_6rnap"]
+font = ExtResource("3_gdbsr")
+font_size = 100
+
+[node name="Deck" type="Control"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -140.0
+offset_right = 100.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2")
+
+[node name="StackLayers" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StackLayer3" parent="StackLayers" instance=ExtResource("1")]
+layout_mode = 0
+
+[node name="StackLayer2" parent="StackLayers" instance=ExtResource("1")]
+layout_mode = 0
+
+[node name="StackLayer1" parent="StackLayers" instance=ExtResource("1")]
+layout_mode = 0
+
+[node name="TopCard" parent="." instance=ExtResource("1")]
+layout_mode = 0
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 402.0
+offset_top = 102.0
+offset_right = 485.0
+offset_bottom = 183.0
+color = Color(0, 0, 0, 0.432)
+
+[node name="CardCountLabel" type="Label" parent="."]
+texture_filter = 1
+layout_mode = 0
+offset_left = 405.0
+offset_top = 84.0
+offset_right = 485.0
+offset_bottom = 185.0
+text = "48"
+label_settings = SubResource("LabelSettings_6rnap")

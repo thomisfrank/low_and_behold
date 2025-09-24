@@ -1,0 +1,9 @@
+[gd_resource type="LabelSettings" load_steps=2 format=3 uid="uid://dagm2nr843ykp"]
+
+[ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="1_font"]
+
+[resource]
+line_spacing = 0.0
+font = ExtResource("1_font")
+font_size = 200
+font_color = Color(0.17254902, 0.24313726, 0.3137255, 1)

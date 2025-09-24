@@ -1,0 +1,235 @@
+extends Control
+
+@onready var top_value_label: Label = $"Values/TopValue"
+@onready var bottom_value_label: Label = $"Values/BottomValue"
+@onready var values_container: Control = $"Values"
+# Single icon node; texture comes from data
+@onready var icon_node: TextureRect = $"AspectRatioContainer/Icon"
+# Background gradient (shader lives here)
+@onready var moving_gradient: ColorRect = $"CardBackground/Padding/MovingGradient"
+@onready var frame_node: TextureRect = $"CardBackground/Padding/Frame"
+@onready var background_container: AspectRatioContainer = $"CardBackground"
+
+# Subtle jitter settings
+@export var jitter_enabled: bool = true
+@export var jitter_amplitude: float = 1.0 # pixels
+@export var jitter_speed: float = 1.5     # cycles per second
+
+# Inspector-adjustable label positioning
+@export var top_padding: int = 20
+@export var bottom_padding: int = 20
+@export var top_nudge: Vector2 = Vector2.ZERO    # fine-tune top-right label (x,y)
+@export var bottom_nudge: Vector2 = Vector2.ZERO # fine-tune bottom-left label (x,y)
+
+# Debug logging toggle
+@export var debug_logging: bool = true
+
+var _time_accum: float = 0.0
+var _top_base := {"l": 0.0, "r": 0.0, "t": 0.0, "b": 0.0}
+var _bottom_base := {"l": 0.0, "r": 0.0, "t": 0.0, "b": 0.0}
+var _phase_top: float = 0.0
+var _phase_bottom: float = 1.234
+
+func _ready():
+	# Explicitly ensure the background is visible
+	var bg := get_node_or_null("CardBackground")
+	if bg:
+		bg.visible = true
+	
+	# Align value text toward their corners
+	if top_value_label:
+		top_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		top_value_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	if bottom_value_label:
+		bottom_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		bottom_value_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
+
+	set_process(true)
+	# Simple deterministic phases based on instance id to desync cards slightly
+	var id_hash := float(get_instance_id() & 1023)
+	_phase_top = fmod(id_hash * 0.017, 6.283185307)
+	_phase_bottom = fmod(_phase_top + 2.513, 6.283185307)
+
+	if debug_logging:
+		print("[Card] _ready: size=", size, " values_container=", (values_container if values_container else null))
+		print("[Card] nodes: top=", top_value_label, " bottom=", bottom_value_label, " icon=", icon_node)
+		print("[Card] bg nodes: container=", background_container, " gradient=", moving_gradient, " frame=", frame_node)
+		if background_container:
+			print("[Card] CardBackground rect: size=", background_container.size, " visible=", background_container.is_visible_in_tree())
+		if moving_gradient:
+			print("[Card] MovingGradient rect: size=", moving_gradient.size, " visible=", moving_gradient.is_visible_in_tree(), " material=", moving_gradient.material)
+		if frame_node:
+			print("[Card] Frame rect: size=", frame_node.size, " visible=", frame_node.is_visible_in_tree(), " tex=", frame_node.texture)
+
+	_ensure_background_material()
+
+func _position_corner_labels(_padding: int = 10) -> void:
+	if not (values_container and top_value_label and bottom_value_label):
+		return
+	# Use exported paddings; ignore arg if provided
+	var tp := top_padding
+	var bp := bottom_padding
+
+	# Get the size of the top label's text
+	var top_size: Vector2 = top_value_label.get_minimum_size()
+	
+	# Set the offset for the top label
+	# The top edge is at `padding` from the top of the parent
+	top_value_label.offset_top = tp
+	# The bottom edge is at `padding` + the text height from the top of the parent
+	top_value_label.offset_bottom = tp + top_size.y
+	# The right edge is at `-padding` from the right of the parent
+	top_value_label.offset_right = -tp
+	# The left edge is at `-padding` - the text width from the right of the parent
+	top_value_label.offset_left = -tp - top_size.x
+	# Apply fine nudge
+	top_value_label.offset_left += top_nudge.x
+	top_value_label.offset_right += top_nudge.x
+	top_value_label.offset_top += top_nudge.y
+	top_value_label.offset_bottom += top_nudge.y
+	
+
+	# Get the size of the bottom label's text
+	var bottom_size: Vector2 = bottom_value_label.get_minimum_size()
+	
+	# Set the offset for the bottom label
+	# The left edge is at `padding` from the left of the parent
+	bottom_value_label.offset_left = bp
+	# The right edge is at `padding` + the text width from the left of the parent
+	bottom_value_label.offset_right = bp + bottom_size.x
+	# The bottom edge is at `-padding` from the bottom of the parent
+	bottom_value_label.offset_bottom = -bp
+	# The top edge is at `-padding` - the text height from the bottom of the parent
+	bottom_value_label.offset_top = -bp - bottom_size.y
+	# Apply fine nudge
+	bottom_value_label.offset_left += bottom_nudge.x
+	bottom_value_label.offset_right += bottom_nudge.x
+	bottom_value_label.offset_top += bottom_nudge.y
+	bottom_value_label.offset_bottom += bottom_nudge.y
+
+	if debug_logging:
+		print("[Card] _position_corner_labels: top_size=", top_size, " top offsets L/R/T/B=", top_value_label.offset_left, "/", top_value_label.offset_right, "/", top_value_label.offset_top, "/", top_value_label.offset_bottom)
+		print("[Card] _position_corner_labels: bottom_size=", bottom_size, " bottom offsets L/R/T/B=", bottom_value_label.offset_left, "/", bottom_value_label.offset_right, "/", bottom_value_label.offset_top, "/", bottom_value_label.offset_bottom)
+
+func display(data: CustomCardData):
+	# If onready nodes aren't initialized yet, defer until next frame
+	if top_value_label == null or bottom_value_label == null:
+		call_deferred("display", data)
+		return
+		
+	if debug_logging:
+		print("[Card] display: data=", data)
+	
+	# Set values
+	var value_text := data.get_effect_value()
+	top_value_label.text = value_text
+	bottom_value_label.text = value_text
+
+	# Position labels in corners after text is applied
+	_position_corner_labels()
+	_capture_label_bases()
+
+	# Icon from data
+	if icon_node:
+		icon_node.texture = data.icon
+		if debug_logging:
+			print("[Card] Icon set: ", icon_node.texture)
+	
+	# Make sure background is ready and shader parameters are set
+	_ensure_background_material()
+	
+	# Update shader colors and parameters on the moving gradient
+	if moving_gradient and moving_gradient.material:
+		moving_gradient.material.set_shader_parameter("color_a", data.color_a)
+		moving_gradient.material.set_shader_parameter("color_b", data.color_b)
+		moving_gradient.material.set_shader_parameter("speed", data.shader_speed)
+		moving_gradient.material.set_shader_parameter("intensity", data.shader_intensity)
+		moving_gradient.material.set_shader_parameter("sharpness", data.shader_sharpness)
+		if debug_logging:
+			print("[Card] Background shader updated: color_a=", data.color_a, " color_b=", data.color_b)
+	else:
+		if debug_logging:
+			print("[Card][WARN] moving_gradient or its material missing: ", moving_gradient)
+
+func _ensure_background_material() -> void:
+	# Resolve nodes if missing
+	if not background_container:
+		var found_bg = find_child("CardBackground", true, false)
+		if found_bg and found_bg is AspectRatioContainer:
+			background_container = found_bg
+			background_container.visible = true
+			if debug_logging:
+				print("[Card] Found CardBackground by search: ", background_container)
+			
+	if not moving_gradient:
+		var found_mg = find_child("MovingGradient", true, false)
+		if found_mg and found_mg is ColorRect:
+			moving_gradient = found_mg
+			moving_gradient.visible = true
+			if debug_logging:
+				print("[Card] Found MovingGradient by search: ", moving_gradient)
+				
+	if not frame_node:
+		var found_fr = find_child("Frame", true, false)
+		if found_fr and found_fr is TextureRect:
+			frame_node = found_fr
+			frame_node.visible = true
+			if debug_logging:
+				print("[Card] Found Frame by search: ", frame_node)
+
+	# Ensure shader material exists on the gradient
+	if moving_gradient and (moving_gradient.material == null or not (moving_gradient.material is ShaderMaterial)):
+		var sh: Shader = load("res://scripts/shaders/ActiveCardBackground.gdshader")
+		if sh:
+			var sm := ShaderMaterial.new()
+			sm.shader = sh
+			moving_gradient.material = sm
+			if debug_logging:
+				print("[Card] Assigned fallback ShaderMaterial to MovingGradient")
+				
+func _capture_label_bases() -> void:
+	if top_value_label:
+		_top_base.l = top_value_label.offset_left
+		_top_base.r = top_value_label.offset_right
+		_top_base.t = top_value_label.offset_top
+		_top_base.b = top_value_label.offset_bottom
+	if bottom_value_label:
+		_bottom_base.l = bottom_value_label.offset_left
+		_bottom_base.r = bottom_value_label.offset_right
+		_bottom_base.t = bottom_value_label.offset_top
+		_bottom_base.b = bottom_value_label.offset_bottom
+	if debug_logging:
+		print("[Card] _capture_label_bases: top L/R/T/B=", _top_base.l, "/", _top_base.r, "/", _top_base.t, "/", _top_base.b,
+			" bottom L/R/T/B=", _bottom_base.l, "/", _bottom_base.r, "/", _bottom_base.t, "/", _bottom_base.b)
+
+func _process(delta: float) -> void:
+	# In editor, do not auto-modify offsets so manual tweaks stick
+	if Engine.is_editor_hint():
+		return
+	if not jitter_enabled:
+		return
+	_time_accum += delta
+	_apply_jitter()
+
+func _apply_jitter() -> void:
+	var t := _time_accum
+	var ax := jitter_amplitude
+	var ay := jitter_amplitude * 0.7
+
+	# Top label jitter (around its base)
+	if top_value_label:
+		var jx := sin((t * jitter_speed) + _phase_top) * ax
+		var jy := cos((t * (jitter_speed * 0.8)) + _phase_top) * ay
+		top_value_label.offset_left = _top_base.l + jx
+		top_value_label.offset_right = _top_base.r + jx
+		top_value_label.offset_top = _top_base.t + jy
+		top_value_label.offset_bottom = _top_base.b + jy
+
+	# Bottom label jitter (slightly different phase)
+	if bottom_value_label:
+		var jx2 := sin((t * (jitter_speed * 1.1)) + _phase_bottom) * ax
+		var jy2 := cos((t * (jitter_speed * 0.9)) + _phase_bottom) * ay
+		bottom_value_label.offset_left = _bottom_base.l + jx2
+		bottom_value_label.offset_right = _bottom_base.r + jx2
+		bottom_value_label.offset_top = _bottom_base.t + jy2
+		bottom_value_label.offset_bottom = _bottom_base.b + jy2

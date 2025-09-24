@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CustomCardData" load_steps=4 format=3 uid="uid://bud0726l60w35"]
+
+[ext_resource type="Texture2D" uid="uid://d4gm834l2y443" path="res://assets/icons/swap.png" id="1_gddip"]
+[ext_resource type="Script" uid="uid://mhehyjydjbrj" path="res://scripts/CardData.gd" id="1_j8mun"]
+[ext_resource type="Texture2D" uid="uid://djecb80tl3bvw" path="res://assets/card_resources/FrontFrame.png" id="1_xcuq2"]
+
+[resource]
+script = ExtResource("1_j8mun")
+card_name = "Eight Swap"
+icon = ExtResource("1_gddip")
+color_a = Color(0.92941177, 0.5764706, 0.13333334, 1)
+color_b = Color(0.94509804, 0.76862746, 0.05882353, 1)
+card_frame = ExtResource("1_xcuq2")
+effect_value = 8

@@ -1,0 +1,90 @@
+extends Control
+
+# Get nodes from the scene
+@onready var top_value_label: Label = $"Values/TopValue"
+@onready var bottom_value_label: Label = $"Values/BottomValue"
+@onready var values_container: Control = $"Values"
+@onready var icon_node: TextureRect = $"Icon/Icon"
+@onready var moving_gradient: ColorRect = $"CardBackground/Padding/MovingGradient"
+@onready var front_frame: TextureRect = $"CardBackground/Padding/FrontFrame"
+@onready var back_frame: TextureRect = $"CardBackground/Padding/BackFrame"
+@onready var background_container: AspectRatioContainer = $"CardBackground"
+
+# Debug toggle
+@export var debug_logging: bool = false
+
+# Card appearance state
+var _material_instanced: bool = false
+
+func _ready():
+	if debug_logging:
+		print("[Card] _ready: Card node initialized")
+
+# Main function to display a card based on its data resource
+func display(data: CustomCardData):
+	if debug_logging:
+		print("[Card] Displaying card: ", data.card_name, " (", data.effect_type, ")")
+	
+	# Step 1: Set up the background colors
+	_setup_background_colors(data)
+	
+	# Step 2: Handle frame display based on card type
+	_setup_frame(data)
+	
+	# Step 3: Set the icon
+	if icon_node and data.icon:
+		icon_node.texture = data.icon
+	
+	# Step 4: Set up text values based on card type
+	_setup_text_values(data)
+
+# Set up the background colors and shader
+func _setup_background_colors(data: CustomCardData):
+	# Ensure the material is properly set up
+	if moving_gradient and moving_gradient.material and moving_gradient.material is ShaderMaterial:
+		# Make sure each card has its own material instance
+		if not _material_instanced:
+			moving_gradient.material = moving_gradient.material.duplicate()
+			_material_instanced = true
+		
+		# Set the shader parameters from data
+		var material = moving_gradient.material as ShaderMaterial
+		material.set_shader_parameter("color_a", data.color_a)
+		material.set_shader_parameter("color_b", data.color_b)
+		material.set_shader_parameter("speed", data.shader_speed)
+		material.set_shader_parameter("intensity", data.shader_intensity)
+		material.set_shader_parameter("sharpness", data.shader_sharpness)
+	elif debug_logging:
+		print("[Card] Warning: Missing gradient material")
+
+# Set up which frame to show based on card type
+func _setup_frame(data: CustomCardData):
+	# Show the correct frame based on card type
+	if data.effect_type == CustomCardData.EffectType.Card_Back:
+		# Card Back shows the back frame
+		if front_frame: front_frame.visible = false
+		if back_frame: 
+			back_frame.visible = true
+			if data.card_frame:
+				back_frame.texture = data.card_frame
+	else:
+		# Regular cards show the front frame
+		if back_frame: back_frame.visible = false
+		if front_frame: 
+			front_frame.visible = true
+			if data.card_frame:
+				front_frame.texture = data.card_frame
+
+# Set up text values based on card type
+func _setup_text_values(data: CustomCardData):
+	var value_text = data.get_effect_value()
+	
+	# Handle values visibility based on card type
+	if data.effect_type == CustomCardData.EffectType.Card_Back:
+		# Card backs don't show values
+		if values_container: values_container.visible = false
+	else:
+		# Regular cards show values
+		if values_container: values_container.visible = true
+		if top_value_label: top_value_label.text = value_text
+		if bottom_value_label: bottom_value_label.text = value_text

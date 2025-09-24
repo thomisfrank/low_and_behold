@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CustomCardData" load_steps=4 format=3 uid="uid://dujefugm1cj3o"]
+
+[ext_resource type="Texture2D" uid="uid://djecb80tl3bvw" path="res://assets/card_resources/FrontFrame.png" id="1_0c3sk"]
+[ext_resource type="Texture2D" uid="uid://b0v76y6x4qwme" path="res://assets/icons/draw.png" id="1_behhu"]
+[ext_resource type="Script" uid="uid://mhehyjydjbrj" path="res://scripts/CardData.gd" id="1_snkb4"]
+
+[resource]
+script = ExtResource("1_snkb4")
+card_name = "Six Draw"
+icon = ExtResource("1_behhu")
+color_a = Color(1, 0.9137255, 0.5686275, 1)
+color_b = Color(0.94509804, 0.76862746, 0.05882353, 1)
+card_frame = ExtResource("1_0c3sk")
+effect_type = 1
+effect_value = 6

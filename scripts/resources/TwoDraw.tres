@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CustomCardData" load_steps=4 format=3 uid="uid://bq61ysbyw4610"]
+
+[ext_resource type="Texture2D" uid="uid://djecb80tl3bvw" path="res://assets/card_resources/FrontFrame.png" id="1_mfr8u"]
+[ext_resource type="Script" uid="uid://mhehyjydjbrj" path="res://scripts/CardData.gd" id="1_o8fwj"]
+[ext_resource type="Texture2D" uid="uid://b0v76y6x4qwme" path="res://assets/icons/draw.png" id="1_p2u3o"]
+
+[resource]
+script = ExtResource("1_o8fwj")
+card_name = "Two Draw"
+icon = ExtResource("1_p2u3o")
+color_a = Color(0.3764706, 0.8039216, 0.5019608, 1)
+color_b = Color(0.15294118, 0.68235296, 0.3764706, 1)
+card_frame = ExtResource("1_mfr8u")
+effect_type = 1
+effect_value = 2
