@@ -15,6 +15,11 @@ const DEFAULT_CARD_BACK_PATH = "res://scripts/resources/CardBack.tres"
 var _count: int = 0
 
 func _ready():
+	print("[Deck] _ready() called")
+	
+	# Enable mouse input for this Control node
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	
 	# Set initial count and update display
 	_count = initial_count
 	_update_count_label()
@@ -22,6 +27,7 @@ func _ready():
 	# Clean up any existing stack layers from the scene
 	if stack_layers:
 		stack_layers.z_index = -50  # Ensure stack is behind everything
+		stack_layers.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block mouse input
 		for child in stack_layers.get_children():
 			if child:
 				child.queue_free()
@@ -36,6 +42,9 @@ func _ready():
 		card.position = Vector2(0, i * stack_offset)  # Each card offset below previous
 		# Set z-index so bottom cards render behind top cards
 		card.z_index = -(i + 1) * 10  # Bottom card has lowest z-index
+		# Ensure stack cards don't block mouse input
+		if card is Control:
+			(card as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		stack_layers.add_child(card)
 		card.call_deferred("display", card_back_data)
 	
@@ -45,6 +54,9 @@ func _ready():
 	var top = CardScene.instantiate()
 	top.name = "TopCard"
 	top.z_index = 10  # Highest z-index to appear above stack
+	# Allow clicks to pass through to the deck
+	if top is Control:
+		(top as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(top)
 	top.position = Vector2.ZERO  # Centered
 	
@@ -52,17 +64,32 @@ func _ready():
 	var top_card_data = _load_card_resource(top_card_key)
 	top.call_deferred("display", top_card_data)
 	top_card = top
+	
+	print("[Deck] Setup complete, top_card_key=", top_card_key)
+	
+	# Connect mouse signals for debugging
+	if not is_connected("mouse_entered", Callable(self, "_on_mouse_entered")):
+		connect("mouse_entered", Callable(self, "_on_mouse_entered"))
+	if not is_connected("mouse_exited", Callable(self, "_on_mouse_exited")):
+		connect("mouse_exited", Callable(self, "_on_mouse_exited"))
 
 signal request_draw
 
-# Handle clicking on the top card
+# Handle clicking on the deck to draw cards
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if top_card and top_card is Control:
-			var rect = (top_card as Control).get_global_rect()
-			if rect.has_point(get_global_mouse_position()):
-				print("[Deck] TopCard clicked, emitting request_draw")
-				emit_signal("request_draw")
+	print("[Deck] _gui_input called with event: ", event)
+	if event is InputEventMouseButton:
+		print("[Deck] Mouse button event - button:", event.button_index, " pressed:", event.pressed)
+		if event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			print("[Deck] Left click detected, emitting request_draw")
+			emit_signal("request_draw")
+
+# Add mouse enter/exit for debugging
+func _on_mouse_entered():
+	print("[Deck] Mouse entered deck area")
+
+func _on_mouse_exited():
+	print("[Deck] Mouse exited deck area")
 
 # Update the count label with current count
 func _update_count_label():

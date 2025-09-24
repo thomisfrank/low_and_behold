@@ -12,6 +12,13 @@ const CardGDScript = preload("res://scripts/NewCard.gd")
 @export var CardScale: Vector2 = Vector2.ONE
 @export var debug_logging: bool = true
 
+# Animation settings
+@export_group("Card Animation")
+@export var card_draw_flip_duration: float = 0.8
+@export var card_draw_move_duration: float = 1.2
+@export var card_draw_rotation: float = 15.0
+@export var card_final_scale: Vector2 = Vector2(0.8, 0.8)
+
 var _hand_index: int = 0
 
 
@@ -25,16 +32,23 @@ func _ready():
 	if not deck_node:
 		deck_node = get_tree().get_root().find_node("Deck", true, false)
 	if deck_node and deck_node.has_signal("request_draw"):
-		deck_node.connect("request_draw", Callable(self, "_on_deck_request_draw"))
+		if not deck_node.is_connected("request_draw", Callable(self, "_on_deck_request_draw")):
+			deck_node.connect("request_draw", Callable(self, "_on_deck_request_draw"))
+			if debug_logging:
+				print("[GM] Connected to Deck.request_draw at: ", deck_node.get_path())
+		else:
+			if debug_logging:
+				print("[GM] Already connected to Deck.request_draw")
+	else:
 		if debug_logging:
-			print("[GM] Connected to Deck.request_draw")
+			print("[GM] WARNING: Deck node not found or signal missing!")
 
 	# Hide any PlayerHand placeholders so no cards are visible until drawn
 	var ph = get_node_or_null("PlayerHand")
 	if not ph:
 		ph = get_tree().get_root().find_node("PlayerHand", true, false)
 	if ph:
-		for slot_name in ["cards", "cards2", "cards3", "cards4"]:
+		for slot_name in ["HandSlot1", "HandSlot2", "HandSlot3", "HandSlot4"]:
 			if ph.has_node(slot_name):
 				var slot = ph.get_node(slot_name)
 				if slot and slot is Node:
@@ -74,6 +88,7 @@ func create_card(data: CustomCardData):
 		print("[GM] display() deferred with data: ", data)
 
 func _on_deck_request_draw() -> void:
+	print("[GM] _on_deck_request_draw() called!")
 	# When the deck requests a draw, choose a random front-facing card and animate it to PlayerHand
 	var candidates := [
 		"res://scripts/resources/TwoDraw.tres",
@@ -114,7 +129,7 @@ func _on_deck_request_draw() -> void:
 	var deck_pos = deck_node.global_position
 	
 	# Find target slot and position
-	var placeholders := ["cards", "cards2", "cards3", "cards4"]
+	var placeholders := ["HandSlot1", "HandSlot2", "HandSlot3", "HandSlot4"]
 	var target_position: Vector2
 	var target_slot: Node = null
 	
@@ -135,11 +150,17 @@ func _on_deck_request_draw() -> void:
 	var animator = CardDrawAnimation.new()
 	add_child(animator)
 	
+	# Set animation parameters from exports
+	animator.flip_duration = card_draw_flip_duration
+	animator.move_duration = card_draw_move_duration
+	animator.rotation_angle = card_draw_rotation
+	animator.final_scale = card_final_scale
+	
 	# Connect to animation finished signal
 	animator.connect("animation_finished", Callable(self, "_on_card_animation_finished").bind(chosen, target_slot))
 	
 	# Start the animation from deck to hand slot
-	animator.animate_card_draw(chosen, deck_pos, target_position, 0.0, Vector2(0.8, 0.8))
+	animator.animate_card_draw(chosen, deck_pos, target_position, 0.0, card_final_scale)
 	
 	if debug_logging:
 		print("[GM] Started animated card draw: ", chosen_path, " from ", deck_pos, " to ", target_position)
