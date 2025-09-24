@@ -10,15 +10,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="cards" parent="." instance=ExtResource("1_4moqc")]
+[node name="HandSlot1" parent="." instance=ExtResource("1_4moqc")]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.084375
 anchor_top = 0.7814815
 anchor_right = 0.084375
 anchor_bottom = 0.7814815
+debug_logging = null
 
-[node name="cards2" parent="." instance=ExtResource("1_4moqc")]
+[node name="HandSlot2" parent="." instance=ExtResource("1_4moqc")]
+unique_name_in_owner = true
 z_index = -20
 layout_mode = 1
 anchors_preset = -1
@@ -26,8 +28,10 @@ anchor_left = 0.21458334
 anchor_top = 0.7740741
 anchor_right = 0.21458334
 anchor_bottom = 0.7740741
+debug_logging = null
 
-[node name="cards3" parent="." instance=ExtResource("1_4moqc")]
+[node name="HandSlot3" parent="." instance=ExtResource("1_4moqc")]
+unique_name_in_owner = true
 z_index = -40
 layout_mode = 1
 anchors_preset = -1
@@ -35,8 +39,10 @@ anchor_left = 0.328125
 anchor_top = 0.7740741
 anchor_right = 0.328125
 anchor_bottom = 0.7740741
+debug_logging = null
 
-[node name="cards4" parent="." instance=ExtResource("1_4moqc")]
+[node name="HandSlot4" parent="." instance=ExtResource("1_4moqc")]
+unique_name_in_owner = true
 z_index = -60
 layout_mode = 1
 anchors_preset = -1
@@ -44,3 +50,4 @@ anchor_left = 0.45104167
 anchor_top = 0.7740741
 anchor_right = 0.45104167
 anchor_bottom = 0.7740741
+debug_logging = null

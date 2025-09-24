@@ -21,6 +21,7 @@ func _ready():
 	
 	# Clean up any existing stack layers from the scene
 	if stack_layers:
+		stack_layers.z_index = -50  # Ensure stack is behind everything
 		for child in stack_layers.get_children():
 			if child:
 				child.queue_free()
@@ -28,11 +29,13 @@ func _ready():
 	# Get the card back resource - always use CardBack for the stack
 	var card_back_data = _load_card_resource("CardBack")
 	
-	# Create three stacked cards with 10px offset
+	# Create three stacked cards with proper z-indexing and offset
 	for i in range(3):
 		var card = CardScene.instantiate()
 		card.name = "StackLayer%d" % (i + 1)
-		card.position = Vector2(0, i * stack_offset)  # Each card 10px below previous
+		card.position = Vector2(0, i * stack_offset)  # Each card offset below previous
+		# Set z-index so bottom cards render behind top cards
+		card.z_index = -(i + 1) * 10  # Bottom card has lowest z-index
 		stack_layers.add_child(card)
 		card.call_deferred("display", card_back_data)
 	
@@ -41,6 +44,7 @@ func _ready():
 		top_card.queue_free()
 	var top = CardScene.instantiate()
 	top.name = "TopCard"
+	top.z_index = 10  # Highest z-index to appear above stack
 	add_child(top)
 	top.position = Vector2.ZERO  # Centered
 	

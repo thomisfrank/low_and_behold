@@ -3,7 +3,7 @@ extends Node2D
 const CardScene = preload("res://scenes/cards.tscn")
 
 # Mark script to preload to avoid shader/material issues
-const CardGDScript = preload("res://scripts/Card.gd")
+const CardGDScript = preload("res://scripts/NewCard.gd")
 
 @export var card_data: CustomCardData
 @export_file("*.tres") var card_data_path: String
@@ -74,7 +74,7 @@ func create_card(data: CustomCardData):
 		print("[GM] display() deferred with data: ", data)
 
 func _on_deck_request_draw() -> void:
-	# When the deck requests a draw, choose a random front-facing card and place it in PlayerHand
+	# When the deck requests a draw, choose a random front-facing card and animate it to PlayerHand
 	var candidates := [
 		"res://scripts/resources/TwoDraw.tres",
 		"res://scripts/resources/TwoSwap.tres",
@@ -95,7 +95,7 @@ func _on_deck_request_draw() -> void:
 		push_warning("[GM] Failed to load chosen card resource: %s" % chosen_path)
 		return
 
-	# Find PlayerHand node and instance the card under it
+	# Find PlayerHand node and the target slot
 	var ph := get_node_or_null("PlayerHand")
 	if not ph:
 		# try root-level path
@@ -104,29 +104,74 @@ func _on_deck_request_draw() -> void:
 		push_warning("[GM] PlayerHand node not found; cannot place drawn card")
 		return
 
-	# Prefer filling placeholders sequentially (cards, cards2, ...)
+	# Find Deck node to get the starting position
+	var deck_node = get_node_or_null("Deck")
+	if not deck_node:
+		push_warning("[GM] Deck node not found; cannot animate card draw")
+		return
+	
+	# Get deck position as starting point
+	var deck_pos = deck_node.global_position
+	
+	# Find target slot and position
 	var placeholders := ["cards", "cards2", "cards3", "cards4"]
-	var placed := false
+	var target_position: Vector2
+	var target_slot: Node = null
+	
 	if _hand_index < placeholders.size():
 		var target_name: String = placeholders[_hand_index]
 		if ph.has_node(target_name):
-			var slot = ph.get_node(target_name)
-			# If the slot is an instance of the card scene, call its display() to show the card front
-			if slot and slot.has_method("display"):
-				slot.call_deferred("display", chosen)
-				slot.visible = true
-				placed = true
-	if not placed:
-		# Fallback: instantiate a new card under PlayerHand
-		var card_instance = CardScene.instantiate()
-		ph.add_child(card_instance)
-		card_instance.call_deferred("display", chosen)
+			target_slot = ph.get_node(target_name)
+			target_position = target_slot.global_position
+		else:
+			push_warning("[GM] Target slot %s not found" % target_name)
+			return
+	else:
+		# No more slots available
+		push_warning("[GM] No more hand slots available")
+		return
+	
+	# Create and start the card draw animation
+	var animator = CardDrawAnimation.new()
+	add_child(animator)
+	
+	# Connect to animation finished signal
+	animator.connect("animation_finished", Callable(self, "_on_card_animation_finished").bind(chosen, target_slot))
+	
+	# Start the animation from deck to hand slot
+	animator.animate_card_draw(chosen, deck_pos, target_position, 0.0, Vector2(0.8, 0.8))
+	
 	if debug_logging:
-		print("[GM] Drew card into PlayerHand: ", chosen_path, " placed=", placed)
+		print("[GM] Started animated card draw: ", chosen_path, " from ", deck_pos, " to ", target_position)
+	
 	_hand_index += 1
 
 	# Update deck visual count if deck exposes set_count
-	var deck_node = get_node_or_null("Deck")
 	if deck_node and deck_node.has_method("get_count") and deck_node.has_method("set_count"):
 		var current = deck_node.call("get_count")
 		deck_node.call("set_count", max(0, int(current) - 1))
+
+# Called when card draw animation finishes
+func _on_card_animation_finished(animated_card: Control, drawn_card_data: CustomCardData, target_slot: Node):
+	# Replace the target slot with the animated card or update it
+	if target_slot and target_slot.has_method("display"):
+		# Update the existing slot to show the card
+		target_slot.call_deferred("display", drawn_card_data)
+		target_slot.visible = true
+		
+		# Clean up the animated card
+		if animated_card and animated_card.get_parent():
+			animated_card.get_parent().remove_child(animated_card)
+			animated_card.queue_free()
+	else:
+		# Move the animated card to the target position
+		if animated_card and target_slot:
+			var parent = target_slot.get_parent()
+			if animated_card.get_parent():
+				animated_card.get_parent().remove_child(animated_card)
+			parent.add_child(animated_card)
+			animated_card.position = target_slot.position
+			animated_card.visible = true
+	
+	if debug_logging:
+		print("[GM] Card animation finished and placed in hand slot")
