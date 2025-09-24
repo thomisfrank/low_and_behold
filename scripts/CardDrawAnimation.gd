@@ -13,7 +13,9 @@ const CardScript = preload("res://scripts/NewCard.gd")
 @export var flip_duration: float = 0.8
 @export var move_duration: float = 1.2
 @export var total_frames: int = 8
-@export var rotation_angle: float = 15.0  # Degrees to rotate during animation
+@export var rotation_angle: float = 15.0  # Degrees to rotate during flip
+@export var final_scale: Vector2 = Vector2(0.8, 0.8)  # Scale when animation completes
+@export var max_rotation_during_move: float = 10.0  # Max rotation during move to hand
 
 # Card states
 var animating_card: Control
@@ -32,7 +34,7 @@ func _ready():
 	pass  # No setup needed
 
 # Start the card draw animation
-func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vector2, final_rotation: float = 0.0, final_scale: Vector2 = Vector2.ONE):
+func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vector2, final_rotation: float = 0.0, end_scale: Vector2 = Vector2.ONE):
 	if is_animating:
 		print("[CardDrawAnimation] Already animating, ignoring request")
 		return
@@ -41,7 +43,7 @@ func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vec
 	start_position = from_pos
 	target_position = to_pos
 	target_rotation = final_rotation
-	target_scale = final_scale
+	target_scale = end_scale  # Use the parameter instead of default
 	
 	# Create the card instance
 	animating_card = CardScene.instantiate()
@@ -139,8 +141,8 @@ func _exit_tree():
 		move_tween.kill()
 
 # Utility function to create a card draw animation from deck to hand slot
-static func create_draw_animation(parent: Node, deck_pos: Vector2, hand_pos: Vector2, card_data: CustomCardData, final_rotation: float = 0.0, final_scale: Vector2 = Vector2.ONE) -> CardDrawAnimation:
+static func create_draw_animation(parent: Node, deck_pos: Vector2, hand_pos: Vector2, card_data: CustomCardData, final_rotation: float = 0.0, end_scale: Vector2 = Vector2.ONE) -> CardDrawAnimation:
 	var animator = CardDrawAnimation.new()
 	parent.add_child(animator)
-	animator.animate_card_draw(card_data, deck_pos, hand_pos, final_rotation, final_scale)
+	animator.animate_card_draw(card_data, deck_pos, hand_pos, final_rotation, end_scale)
 	return animator
