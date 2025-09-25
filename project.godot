@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="low&behold"
+config/name="Low&behold"
 run/main_scene="uid://co3eb35qopnf1"
 config/features=PackedStringArray("4.5", "Mobile")
 config/icon="res://icon.svg"
@@ -24,6 +24,15 @@ Backgrounds="*res://scripts/Backgrounds.gd"
 window/size/viewport_width=1920
 window/size/viewport_height=1080
 window/stretch/mode="viewport"
+
+[editor]
+
+version_control/plugin_name="GitPlugin"
+version_control/autoload_on_startup=true
+
+[editor_plugins]
+
+enabled=PackedStringArray()
 
 [rendering]
 

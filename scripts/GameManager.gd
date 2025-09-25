@@ -103,6 +103,19 @@ func _ready():
 				if slot and slot is Node:
 					slot.visible = false
 
+	# Configure Score Panels
+	var score_panel = get_node_or_null("ScorePanel")
+	if score_panel:
+		var opponent_score = score_panel.get_node_or_null("OpponentScore")
+		if opponent_score:
+			opponent_score.visible = false
+
+	var opp_score_panel = get_node_or_null("OppScore")
+	if opp_score_panel:
+		var player_score = opp_score_panel.get_node_or_null("PlayerScore")
+		if player_score:
+			player_score.visible = false
+
 func create_card(data: CustomCardData):
 	# 1. Instantiate blank card scene
 	var new_card = CardScene.instantiate()

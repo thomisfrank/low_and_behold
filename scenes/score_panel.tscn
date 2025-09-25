@@ -1,7 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://cikg76322k06p"]
+[gd_scene load_steps=10 format=3 uid="uid://cikg76322k06p"]
 
 [ext_resource type="Texture2D" uid="uid://bxsomb5x1yr6u" path="res://assets/UI/PlayerScoreFrame.png" id="1_27tpy"]
-[ext_resource type="Texture2D" uid="uid://bx7cuc4oinduk" path="res://assets/UI/ScoreCounter.png" id="2_jfakj"]
+[ext_resource type="Script" uid="uid://cwnovhw2f2xxh" path="res://scenes/score_panel.gd" id="1_amt3t"]
+[ext_resource type="Texture2D" uid="uid://bx7cuc4oinduk" path="res://assets/UI/ActionCounterFill.png" id="2_jfakj"]
+[ext_resource type="Texture2D" uid="uid://p78ndvak2hpt" path="res://assets/UI/ActionCounterFrame.png" id="3_amt3t"]
 [ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="3_jfakj"]
 [ext_resource type="Texture2D" uid="uid://46jsonjrko0r" path="res://assets/UI/OpponentScoreFrame.png" id="3_qok14"]
 
@@ -10,7 +12,7 @@
 [sub_resource type="LabelSettings" id="LabelSettings_qok14"]
 font = ExtResource("3_jfakj")
 font_size = 48
-font_color = Color(0.90588236, 0.29803923, 0.23529412, 1)
+font_color = Color(0.17254902, 0.24313726, 0.3137255, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tx78e"]
 
@@ -21,6 +23,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_amt3t")
 
 [node name="PlayerScore" type="Panel" parent="."]
 texture_filter = 1
@@ -30,7 +33,7 @@ offset_right = 226.0
 offset_bottom = 46.0
 theme_override_styles/panel = SubResource("StyleBoxEmpty_amt3t")
 
-[node name="frame" type="TextureRect" parent="PlayerScore"]
+[node name="ScoreFrame" type="TextureRect" parent="PlayerScore"]
 texture_filter = 1
 custom_minimum_size = Vector2(320, 135)
 layout_mode = 0
@@ -39,71 +42,51 @@ offset_bottom = 135.0
 texture = ExtResource("1_27tpy")
 stretch_mode = 2
 
-[node name="score0" type="TextureRect" parent="PlayerScore"]
-visible = false
-layout_mode = 0
-offset_left = 24.0
-offset_top = 15.0
-offset_right = 64.0
-offset_bottom = 55.0
-texture = ExtResource("2_jfakj")
-
-[node name="score1" type="TextureRect" parent="PlayerScore"]
-visible = false
-layout_mode = 0
-offset_left = 69.0
-offset_top = 15.0
-offset_right = 109.0
-offset_bottom = 55.0
-texture = ExtResource("2_jfakj")
-
-[node name="score2" type="TextureRect" parent="PlayerScore"]
-visible = false
-layout_mode = 0
-offset_left = 113.0
-offset_top = 15.0
-offset_right = 153.0
-offset_bottom = 55.0
-texture = ExtResource("2_jfakj")
-
-[node name="score3" type="TextureRect" parent="PlayerScore"]
-visible = false
-layout_mode = 0
-offset_left = 158.0
-offset_top = 15.0
-offset_right = 198.0
-offset_bottom = 55.0
-texture = ExtResource("2_jfakj")
-
-[node name="score4" type="TextureRect" parent="PlayerScore"]
-visible = false
-layout_mode = 0
-offset_left = 203.0
-offset_top = 15.0
-offset_right = 243.0
-offset_bottom = 55.0
-texture = ExtResource("2_jfakj")
-
-[node name="score5" type="TextureRect" parent="PlayerScore"]
-visible = false
-layout_mode = 0
-offset_left = 247.0
-offset_top = 15.0
-offset_right = 287.0
-offset_bottom = 55.0
-texture = ExtResource("2_jfakj")
-
-[node name="Label" type="Label" parent="PlayerScore"]
+[node name="ScoreTracker" type="Label" parent="PlayerScore/ScoreFrame"]
 texture_filter = 1
-layout_mode = 0
+layout_mode = 1
+anchors_preset = -1
 anchor_left = 0.190625
-anchor_top = 0.5555556
+anchor_top = 0.08148148
 anchor_right = 0.821875
-anchor_bottom = 0.9259259
+anchor_bottom = 0.45185184
 theme_override_font_sizes/font_size = 13
-text = "Actions: 2/2"
+text = "Score: #"
 label_settings = SubResource("LabelSettings_qok14")
-metadata/_edit_use_anchors_ = true
+
+[node name="ActivityIndicator" type="HBoxContainer" parent="PlayerScore/ScoreFrame"]
+custom_minimum_size = Vector2(237, 40)
+layout_mode = 0
+offset_left = 44.0
+offset_top = 78.0
+offset_right = 281.0
+offset_bottom = 118.0
+
+[node name="ActionIndicator" type="CenterContainer" parent="PlayerScore/ScoreFrame/ActivityIndicator"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Frame" type="TextureRect" parent="PlayerScore/ScoreFrame/ActivityIndicator/ActionIndicator"]
+layout_mode = 2
+texture = ExtResource("3_amt3t")
+
+[node name="Fill" type="TextureRect" parent="PlayerScore/ScoreFrame/ActivityIndicator/ActionIndicator"]
+unique_name_in_owner = true
+layout_mode = 2
+texture = ExtResource("2_jfakj")
+
+[node name="ActionIndicator2" type="CenterContainer" parent="PlayerScore/ScoreFrame/ActivityIndicator"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Frame" type="TextureRect" parent="PlayerScore/ScoreFrame/ActivityIndicator/ActionIndicator2"]
+layout_mode = 2
+texture = ExtResource("3_amt3t")
+
+[node name="Fill" type="TextureRect" parent="PlayerScore/ScoreFrame/ActivityIndicator/ActionIndicator2"]
+visible = false
+layout_mode = 2
+texture = ExtResource("2_jfakj")
 
 [node name="OpponentScore" type="Panel" parent="."]
 custom_minimum_size = Vector2(320, 135)
@@ -119,68 +102,49 @@ offset_right = 40.0
 offset_bottom = 40.0
 texture = ExtResource("3_qok14")
 
-[node name="score0" type="TextureRect" parent="OpponentScore"]
-visible = false
-layout_mode = 0
-offset_left = 24.0
-offset_top = 78.0
-offset_right = 64.0
-offset_bottom = 118.0
-texture = ExtResource("2_jfakj")
-
-[node name="score1" type="TextureRect" parent="OpponentScore"]
-visible = false
-layout_mode = 0
-offset_left = 69.0
-offset_top = 78.0
-offset_right = 109.0
-offset_bottom = 118.0
-texture = ExtResource("2_jfakj")
-
-[node name="score2" type="TextureRect" parent="OpponentScore"]
-visible = false
-layout_mode = 0
-offset_left = 113.0
-offset_top = 78.0
-offset_right = 153.0
-offset_bottom = 118.0
-texture = ExtResource("2_jfakj")
-
-[node name="score3" type="TextureRect" parent="OpponentScore"]
-visible = false
-layout_mode = 0
-offset_left = 158.0
-offset_top = 78.0
-offset_right = 198.0
-offset_bottom = 118.0
-texture = ExtResource("2_jfakj")
-
-[node name="score4" type="TextureRect" parent="OpponentScore"]
-visible = false
-layout_mode = 0
-offset_left = 203.0
-offset_top = 78.0
-offset_right = 243.0
-offset_bottom = 118.0
-texture = ExtResource("2_jfakj")
-
-[node name="score5" type="TextureRect" parent="OpponentScore"]
-visible = false
-layout_mode = 0
-offset_left = 247.0
-offset_top = 78.0
-offset_right = 287.0
-offset_bottom = 118.0
-texture = ExtResource("2_jfakj")
-
-[node name="Label" type="Label" parent="OpponentScore"]
+[node name="ScoreTracker" type="Label" parent="OpponentScore/frame"]
 texture_filter = 1
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.190625
-anchor_top = 0.074074075
+anchor_top = 0.08148148
 anchor_right = 0.821875
-anchor_bottom = 0.44444445
-text = "Actions: 2/2"
+anchor_bottom = 0.45185184
+offset_top = 63.0
+offset_bottom = 63.0
+theme_override_font_sizes/font_size = 13
+text = "Score: #"
 label_settings = SubResource("LabelSettings_qok14")
-metadata/_edit_use_anchors_ = true
+
+[node name="ActivityIndicator" type="HBoxContainer" parent="OpponentScore/frame"]
+custom_minimum_size = Vector2(237, 40)
+layout_mode = 0
+offset_left = 44.0
+offset_top = 14.0
+offset_right = 281.0
+offset_bottom = 54.0
+
+[node name="ActionIndicator" type="CenterContainer" parent="OpponentScore/frame/ActivityIndicator"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Frame" type="TextureRect" parent="OpponentScore/frame/ActivityIndicator/ActionIndicator"]
+layout_mode = 2
+texture = ExtResource("3_amt3t")
+
+[node name="Fill" type="TextureRect" parent="OpponentScore/frame/ActivityIndicator/ActionIndicator"]
+layout_mode = 2
+texture = ExtResource("2_jfakj")
+
+[node name="ActionIndicator2" type="CenterContainer" parent="OpponentScore/frame/ActivityIndicator"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Frame" type="TextureRect" parent="OpponentScore/frame/ActivityIndicator/ActionIndicator2"]
+layout_mode = 2
+texture = ExtResource("3_amt3t")
+
+[node name="Fill" type="TextureRect" parent="OpponentScore/frame/ActivityIndicator/ActionIndicator2"]
+visible = false
+layout_mode = 2
+texture = ExtResource("2_jfakj")

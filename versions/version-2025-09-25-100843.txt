@@ -1,0 +1,309 @@
+Version created on 2025-09-25-100843
+
+Changes:
+
+diff --git a/scenes/main.tscn b/scenes/main.tscn
+index 9253fdc..f0d7fdc 100644
+--- a/scenes/main.tscn
++++ b/scenes/main.tscn
+@@ -18,45 +18,61 @@ card_draw_rotation = 0.8
+ metadata/_edit_horizontal_guides_ = [540.0, 190.0]
+ metadata/_edit_vertical_guides_ = [960.0]
+ 
+-[node name="backgrounds" parent="." instance=ExtResource("1_o5qli")]
++[node name="UI" type="CanvasLayer" parent="."]
+ 
+-[node name="Deck" parent="." instance=ExtResource("4_jyhfs")]
++[node name="MainContainer" type="Control" parent="UI"]
++layout_mode = 3
++anchors_preset = 15
++anchor_right = 1.0
++anchor_bottom = 1.0
++grow_horizontal = 2
++grow_vertical = 2
++
++[node name="backgrounds" parent="UI/MainContainer" instance=ExtResource("1_o5qli")]
++layout_mode = 0
++metadata/_edit_use_anchors_ = true
++
++[node name="Deck" parent="UI/MainContainer" instance=ExtResource("4_jyhfs")]
++layout_mode = 1
+ anchors_preset = 8
+ anchor_left = 0.5
+ anchor_top = 0.5
+ anchor_right = 0.5
+ anchor_bottom = 0.5
+-offset_left = 871.0
+-offset_top = 373.0
+-offset_right = 1641.0
+-offset_bottom = 1453.0
++offset_left = -89.0
++offset_top = -167.0
++offset_right = 681.0
++offset_bottom = 913.0
+ grow_horizontal = 2
+ grow_vertical = 2
+ scale = Vector2(0.42000002, 0.42000002)
+ 
+-[node name="PlayerHand" parent="." instance=ExtResource("4_tbgi4")]
+-anchors_preset = 7
++[node name="PlayerHand" parent="UI/MainContainer" instance=ExtResource("4_tbgi4")]
++layout_mode = 1
++anchors_preset = -1
+ anchor_left = 0.5
+-anchor_top = 1.0
+-anchor_right = 0.5
+-offset_left = 649.0
+-offset_top = 885.0
+-offset_right = 2067.1816
+-offset_bottom = 1621.3636
++anchor_top = 0.8227037
++anchor_right = 0.50027084
++anchor_bottom = 0.8227037
++offset_left = -311.0
++offset_top = -161.52002
++offset_right = 1106.6616
++offset_bottom = 565.7528
+ grow_vertical = 0
+ scale = Vector2(0.44, 0.44)
++metadata/_edit_use_anchors_ = true
+ 
+-[node name="ScorePanel" parent="." instance=ExtResource("5_tbgi4")]
+-visible = false
++[node name="ScorePanel" parent="UI/MainContainer" instance=ExtResource("5_tbgi4")]
++layout_mode = 1
+ offset_left = 75.0
+ offset_top = 849.0
+-offset_right = 75.0
+-offset_bottom = 849.0
++offset_right = -1518.0
++offset_bottom = -20.0
+ 
+-[node name="OppScore" parent="." instance=ExtResource("5_tbgi4")]
++[node name="OppScore" parent="UI/MainContainer" instance=ExtResource("5_tbgi4")]
+ unique_name_in_owner = true
+-visible = false
++layout_mode = 1
+ offset_left = 68.0
+ offset_top = 124.0
+-offset_right = 68.0
+-offset_bottom = 124.0
++offset_right = -1527.0
++offset_bottom = -812.0
+diff --git a/scenes/player_hand.tscn b/scenes/player_hand.tscn
+index 7c615da..b0bbbc0 100644
+--- a/scenes/player_hand.tscn
++++ b/scenes/player_hand.tscn
+@@ -21,9 +21,12 @@ anchor_left = 0.18020834
+ anchor_top = 0.7814815
+ anchor_right = 0.721875
+ anchor_bottom = 2.1148148
++offset_left = -18.0
++offset_top = -162.0
++offset_right = -518.0
++offset_bottom = -862.0
+ 
+ [node name="HandSlot2" parent="." instance=ExtResource("1_4moqc")]
+-unique_name_in_owner = true
+ z_index = 2
+ layout_mode = 1
+ anchors_preset = -1
+@@ -31,9 +34,12 @@ anchor_left = 0.31041667
+ anchor_top = 0.7740741
+ anchor_right = 0.8520833
+ anchor_bottom = 2.1074073
++offset_left = -22.0
++offset_top = -176.0
++offset_right = -522.0
++offset_bottom = -876.0
+ 
+ [node name="HandSlot3" parent="." instance=ExtResource("1_4moqc")]
+-unique_name_in_owner = true
+ z_index = 1
+ layout_mode = 1
+ anchors_preset = -1
+@@ -41,12 +47,19 @@ anchor_left = 0.42395833
+ anchor_top = 0.7740741
+ anchor_right = 0.965625
+ anchor_bottom = 2.1074073
++offset_left = -26.0
++offset_top = -148.0
++offset_right = -522.0
++offset_bottom = -848.0
+ 
+ [node name="HandSlot4" parent="." instance=ExtResource("1_4moqc")]
+-unique_name_in_owner = true
+ layout_mode = 1
+ anchors_preset = -1
+ anchor_left = 0.546875
+ anchor_top = 0.7740741
+ anchor_right = 1.0885416
+ anchor_bottom = 2.1074073
++offset_left = 17.0
++offset_top = -188.0
++offset_right = -483.0
++offset_bottom = -888.0
+\ No newline at end of file
+diff --git a/scripts/Backgrounds.gd b/scripts/Backgrounds.gd
+index 96f1101..a95b920 100644
+--- a/scripts/Backgrounds.gd
++++ b/scripts/Backgrounds.gd
+@@ -1,4 +1,4 @@
+-extends Node
++extends Control
+ 
+ # Background picker for scenes/backgrounds.tscn
+ # Designed to run as an Autoload (singleton) or attached to the `backgrounds` node.
+diff --git a/scripts/Deck.gd b/scripts/Deck.gd
+index 45a1e92..301d766 100644
+--- a/scripts/Deck.gd
++++ b/scripts/Deck.gd
+@@ -210,4 +210,4 @@ func _force_card_position(card: Node, target_position: Vector2) -> void:
+ func set_top_card_by_key(key: String) -> void:
+ 	var resource = _load_card_resource(key)
+ 	top_card_key = key
+-	set_top_card(resource)
++	set_top_card(resource)
+\ No newline at end of file
+diff --git a/scripts/GameManager.gd b/scripts/GameManager.gd
+index e348bd5..c2fc392 100644
+--- a/scripts/GameManager.gd
++++ b/scripts/GameManager.gd
+@@ -52,26 +52,8 @@ func _ready():
+ 		print("[GM] Animation scale settings - start: ", CardScale, " -> final: ", card_final_scale)
+ 
+ 	# Connect to Deck's request_draw signal if Deck exists in the scene
+-	var deck_node = get_node_or_null("Deck")
++	var deck_node = get_tree().get_root().find_child("Deck", true, false)
+ 	
+-	if debug_logging:
+-		print("[GM] Looking for Deck node...")
+-		print("[GM] GameManager path: ", get_path())
+-		print("[GM] Direct Deck lookup result: ", deck_node)
+-	
+-	# If not found as direct child, try to find it in scene tree
+-	if not deck_node:
+-		var main_scene = get_tree().current_scene
+-		if main_scene and main_scene != self:
+-			deck_node = main_scene.get_node_or_null("Deck")
+-			if debug_logging:
+-				print("[GM] Tried main_scene.get_node('Deck'): ", deck_node)
+-		
+-		# Last resort: recursive search
+-		if not deck_node:
+-			deck_node = _find_deck_recursive(get_tree().root)
+-			if debug_logging:
+-				print("[GM] Recursive search result: ", deck_node)
+ 	
+ 	if debug_logging:
+ 		if deck_node:
+@@ -93,9 +75,11 @@ func _ready():
+ 		print("[GM] Animation settings - flip_duration:", card_draw_flip_duration, " move_duration:", card_draw_move_duration, " scale:", card_final_scale)
+ 	
+ 	# Hide any PlayerHand placeholders so no cards are visible until drawn
+-	var ph = get_node_or_null("PlayerHand")
+-	if not ph:
+-		ph = get_tree().get_root().find_node("PlayerHand", true, false)
++	var ui_layer = get_node_or_null("UI")
++	var ph = null
++	if ui_layer:
++		ph = ui_layer.find_child("PlayerHand", true, false)
++
+ 	if ph:
+ 		for slot_name in ["HandSlot1", "HandSlot2", "HandSlot3", "HandSlot4"]:
+ 			if ph.has_node(slot_name):
+@@ -174,10 +158,11 @@ func _on_deck_request_draw() -> void:
+ 	_current_hand_meta.append(chosen_meta)
+ 
+ 	# Find PlayerHand node and the target slot
+-	var ph := get_node_or_null("PlayerHand")
+-	if not ph:
+-		# try root-level path
+-		ph = get_node_or_null("/root/Node2D/PlayerHand")
++	var ui_layer = get_node_or_null("UI")
++	var ph = null
++	if ui_layer:
++		ph = ui_layer.find_child("PlayerHand", true, false)
++
+ 	if not ph:
+ 		push_warning("[GM] PlayerHand node not found; cannot place drawn card")
+ 		if debug_logging:
+@@ -188,7 +173,7 @@ func _on_deck_request_draw() -> void:
+ 			print("[GM] Found PlayerHand at: ", ph.get_path())
+ 
+ 	# Find Deck node to get the starting position
+-	var deck_node = get_node_or_null("Deck")
++	var deck_node = get_tree().get_root().find_child("Deck", true, false)
+ 	if not deck_node:
+ 		push_warning("[GM] Deck node not found; cannot animate card draw")
+ 		return
+@@ -260,33 +245,22 @@ func _on_deck_request_draw() -> void:
+ 		deck_node.call("set_count", max(0, int(current) - 1))
+ 
+ # Called when card draw animation finishes
+-func _on_card_animation_finished(animated_card: Control, _drawn_card_data: CustomCardData, _target_slot: Node):
+-	# The animated card is already in the correct position and showing the right data
+-	if animated_card:
+-		animated_card.visible = true
+-		
+-		# Set z-index based on hand position for left-to-right stacking
+-		# Find which slot this card is in and assign z-index accordingly
+-		if _target_slot:
+-			var slot_name = _target_slot.name
+-			var slot_index = 0
+-			if slot_name.ends_with("1"):
+-				slot_index = 0
+-			elif slot_name.ends_with("2"):
+-				slot_index = 1
+-			elif slot_name.ends_with("3"):
+-				slot_index = 2
+-			elif slot_name.ends_with("4"):
+-				slot_index = 3
+-			
+-			# Set z_index to match PlayerHand pattern: 3, 2, 1, 0 (leftmost highest)
+-			animated_card.z_index = 3 - slot_index
+-			
+-			if debug_logging:
+-				print("[GM] Card placed in ", slot_name, " with z_index: ", animated_card.z_index)
++func _on_card_animation_finished(animated_card: Control, drawn_card_data: CustomCardData, target_slot: Node):
++	# The animation is complete. Now, make the actual hand slot visible and display the card.
++	if target_slot:
++		# Pass the card data to the actual slot in the hand
++		target_slot.call("display", drawn_card_data)
++		# Make the slot visible
++		target_slot.visible = true
++		if debug_logging:
++			print("[GM] Card data displayed in ", target_slot.name)
+ 	
++	# The animated card was just for visual effect; it can now be removed.
++	if animated_card:
++		animated_card.queue_free()
++
+ 	if debug_logging:
+-		print("[GM] Card animation finished and placed in hand slot")
++		print("[GM] Card animation finished and placeholder slot updated.")
+ 
+ # Helper function to recursively find Deck node
+ func _find_deck_recursive(node: Node) -> Node:
+diff --git a/scripts/NewCard.gd b/scripts/NewCard.gd
+index 79d2cda..f8c74d3 100644
+--- a/scripts/NewCard.gd
++++ b/scripts/NewCard.gd
+@@ -202,4 +202,4 @@ func _setup_text_values(data: CustomCardData):
+ 		# Regular cards show values
+ 		if values_container: values_container.visible = true
+ 		if top_value_label: top_value_label.text = value_text
+-		if bottom_value_label: bottom_value_label.text = value_text
++		if bottom_value_label: bottom_value_label.text = value_text
+\ No newline at end of file
+diff --git a/scripts/PlayerHand.gd b/scripts/PlayerHand.gd
+index 7aa30ea..efab7ad 100644
+--- a/scripts/PlayerHand.gd
++++ b/scripts/PlayerHand.gd
+@@ -463,4 +463,4 @@ func _show_tooltip(card: Node, card_index: int):
+ 	tooltip_panel.position.x = clamp(tooltip_panel.position.x, 10, screen_size.x - 300)
+ 	tooltip_panel.position.y = clamp(tooltip_panel.position.y, 10, screen_size.y - 150)
+ 	
+-	tooltip_panel.visible = true
+\ No newline at end of file
++	tooltip_panel.visible = true

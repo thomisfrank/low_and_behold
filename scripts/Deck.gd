@@ -6,7 +6,7 @@ const DEFAULT_CARD_BACK_PATH = "res://scripts/resources/CardBack.tres"
 
 @onready var stack_layers: Control = $DeckViewport/DeckControl/StackLayers
 @onready var top_card: Node = $DeckViewport/DeckControl/TopCard
-@onready var count_label: Label = $DeckViewport/DeckControl/CardCount/CardCountLabel
+@onready var count_label: Label = $DeckViewport/DeckControl/CardCount/AspectRatioContainer/CardCountLabel
 
 @export var initial_count: int = 48
 @export var stack_offset: int = 60  # Vertical offset between stacked cards
@@ -149,8 +149,12 @@ func _on_mouse_exited():
 
 # Update the count label with current count
 func _update_count_label():
-	if count_label:
+	if count_label and is_instance_valid(count_label):
+		# Trim any extra whitespace in the scene label and set count
 		count_label.text = str(_count)
+	else:
+		# Defensive: don't error if the label path is wrong
+		print("[Deck] Warning: count_label not found; cannot update display")
 
 # Set deck count (for GameManager to call)
 func set_count(n: int) -> void:

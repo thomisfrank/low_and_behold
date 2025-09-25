@@ -1,10 +1,12 @@
-[gd_scene load_steps=6 format=3 uid="uid://co3eb35qopnf1"]
+[gd_scene load_steps=8 format=3 uid="uid://co3eb35qopnf1"]
 
 [ext_resource type="PackedScene" uid="uid://wbqyylucvb6b" path="res://scenes/backgrounds.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://bbk834gewqfrh" path="res://scripts/GameManager.gd" id="1_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2pypsgvojf3o" path="res://scenes/deck.tscn" id="4_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://lb3wfdukkw5e" path="res://scenes/player_hand.tscn" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://cikg76322k06p" path="res://scenes/score_panel.tscn" id="5_tbgi4"]
+[ext_resource type="PackedScene" uid="uid://dhvcbgkt88duf" path="res://scenes/round_counter.tscn" id="6_tefeu"]
+[ext_resource type="PackedScene" uid="uid://b4h2dmijcovco" path="res://scenes/DetailBox.tscn" id="7_o6xl0"]
 
 [node name="main" type="Node2D"]
 script = ExtResource("1_sugp2")
@@ -40,14 +42,13 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 offset_left = 649.0
-offset_top = 885.0
+offset_top = 673.0
 offset_right = 2067.1816
-offset_bottom = 1621.3636
+offset_bottom = 1409.3636
 grow_vertical = 0
 scale = Vector2(0.44, 0.44)
 
-[node name="ScorePanel" parent="." instance=ExtResource("5_tbgi4")]
-visible = false
+[node name="PlayerScore" parent="." instance=ExtResource("5_tbgi4")]
 offset_left = 75.0
 offset_top = 849.0
 offset_right = 75.0
@@ -55,8 +56,21 @@ offset_bottom = 849.0
 
 [node name="OppScore" parent="." instance=ExtResource("5_tbgi4")]
 unique_name_in_owner = true
-visible = false
 offset_left = 68.0
 offset_top = 124.0
 offset_right = 68.0
 offset_bottom = 124.0
+is_player = false
+
+[node name="RoundCounter" parent="." instance=ExtResource("6_tefeu")]
+offset_left = 1634.0
+offset_top = 500.0
+offset_right = 1634.0
+offset_bottom = 500.0
+
+[node name="DetailBox" parent="." instance=ExtResource("7_o6xl0")]
+visible = false
+offset_left = 375.0
+offset_top = 418.0
+offset_right = 375.0
+offset_bottom = 418.0
