@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://co3eb35qopnf1"]
+[gd_scene load_steps=6 format=3 uid="uid://co3eb35qopnf1"]
 
 [ext_resource type="PackedScene" uid="uid://wbqyylucvb6b" path="res://scenes/backgrounds.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://bbk834gewqfrh" path="res://scripts/GameManager.gd" id="1_sugp2"]
 [ext_resource type="PackedScene" uid="uid://d2pypsgvojf3o" path="res://scenes/deck.tscn" id="4_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://lb3wfdukkw5e" path="res://scenes/player_hand.tscn" id="4_tbgi4"]
+[ext_resource type="PackedScene" uid="uid://cikg76322k06p" path="res://scenes/score_panel.tscn" id="5_tbgi4"]
 
 [node name="main" type="Node2D"]
 script = ExtResource("1_sugp2")
@@ -14,6 +15,7 @@ CardScale = Vector2(0.5, 0.5)
 card_draw_flip_duration = 0.3
 card_draw_move_duration = 0.5
 card_draw_rotation = 5.0
+metadata/_edit_horizontal_guides_ = [849.0, 190.0]
 
 [node name="backgrounds" parent="." instance=ExtResource("1_o5qli")]
 z_index = -100
@@ -44,4 +46,18 @@ offset_right = 923.0
 offset_bottom = 950.0
 grow_vertical = 0
 scale = Vector2(0.44, 0.44)
-script = null
+
+[node name="ScorePanel" parent="." instance=ExtResource("5_tbgi4")]
+visible = false
+offset_left = 75.0
+offset_top = 849.0
+offset_right = 75.0
+offset_bottom = 849.0
+
+[node name="OppScore" parent="." instance=ExtResource("5_tbgi4")]
+unique_name_in_owner = true
+visible = false
+offset_left = 68.0
+offset_top = 124.0
+offset_right = 68.0
+offset_bottom = 124.0

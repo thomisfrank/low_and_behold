@@ -91,8 +91,6 @@ func get_slot(index: int) -> Node:
 # Get the position for a specific hand slot index
 func get_slot_position(index: int) -> Vector2:
 	if index >= 0 and index < slot_positions.size():
-		# Return the slot position relative to the screen, not relative to this node
-		# since slot_positions are already in screen coordinates  
 		return slot_positions[index]
 	else:
 		push_warning("[PlayerHand] Slot position index out of range: ", index)
