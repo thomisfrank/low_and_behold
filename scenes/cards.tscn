@@ -30,6 +30,45 @@ metadata/_edit_use_anchors_ = true
 metadata/_edit_vertical_guides_ = [201.0]
 metadata/_edit_horizontal_guides_ = [274.0]
 
+[node name="CardBackground" type="AspectRatioContainer" parent="."]
+z_index = -10
+custom_minimum_size = Vector2(540, 740)
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.0018518518
+anchor_top = -0.0013513514
+anchor_right = 1.0537037
+anchor_bottom = 1.0040541
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="Padding" type="MarginContainer" parent="CardBackground"]
+custom_minimum_size = Vector2(540, 740)
+layout_mode = 2
+
+[node name="FrontFrame" type="TextureRect" parent="CardBackground/Padding"]
+visibility_layer = 512
+texture_filter = 1
+custom_minimum_size = Vector2(540, 740)
+layout_mode = 2
+texture = ExtResource("2_mnqni")
+
+[node name="BackFrame" type="TextureRect" parent="CardBackground/Padding"]
+unique_name_in_owner = true
+visible = false
+texture_filter = 1
+custom_minimum_size = Vector2(540, 740)
+layout_mode = 2
+texture = ExtResource("6_ucp30")
+
+[node name="MovingGradient" type="ColorRect" parent="CardBackground/Padding"]
+material = SubResource("ShaderMaterial_pqter")
+custom_minimum_size = Vector2(525, 700)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
 [node name="Icon" type="AspectRatioContainer" parent="."]
 layout_mode = 1
 anchors_preset = -1
@@ -86,41 +125,3 @@ text = "#"
 label_settings = ExtResource("8_value_settings")
 vertical_alignment = 2
 metadata/_edit_use_anchors_ = true
-
-[node name="CardBackground" type="AspectRatioContainer" parent="."]
-custom_minimum_size = Vector2(540, 740)
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.0018518518
-anchor_top = -0.0013513514
-anchor_right = 1.0537037
-anchor_bottom = 1.0040541
-grow_horizontal = 2
-grow_vertical = 2
-metadata/_edit_use_anchors_ = true
-
-[node name="Padding" type="MarginContainer" parent="CardBackground"]
-custom_minimum_size = Vector2(540, 740)
-layout_mode = 2
-
-[node name="MovingGradient" type="ColorRect" parent="CardBackground/Padding"]
-material = SubResource("ShaderMaterial_pqter")
-custom_minimum_size = Vector2(525, 700)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-
-[node name="FrontFrame" type="TextureRect" parent="CardBackground/Padding"]
-visibility_layer = 512
-texture_filter = 1
-custom_minimum_size = Vector2(540, 740)
-layout_mode = 2
-texture = ExtResource("2_mnqni")
-
-[node name="BackFrame" type="TextureRect" parent="CardBackground/Padding"]
-unique_name_in_owner = true
-visible = false
-texture_filter = 1
-custom_minimum_size = Vector2(540, 740)
-layout_mode = 2
-texture = ExtResource("6_ucp30")
