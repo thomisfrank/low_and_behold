@@ -205,26 +205,12 @@ func _on_deck_request_draw() -> void:
 		deck_node.call("set_count", max(0, int(current) - 1))
 
 # Called when card draw animation finishes
-func _on_card_animation_finished(animated_card: Control, drawn_card_data: CustomCardData, target_slot: Node):
-	# Replace the target slot with the animated card or update it
-	if target_slot and target_slot.has_method("display"):
-		# Update the existing slot to show the card
-		target_slot.call_deferred("display", drawn_card_data)
-		target_slot.visible = true
-		
-		# Clean up the animated card
-		if animated_card and animated_card.get_parent():
-			animated_card.get_parent().remove_child(animated_card)
-			animated_card.queue_free()
-	else:
-		# Move the animated card to the target position
-		if animated_card and target_slot:
-			var parent = target_slot.get_parent()
-			if animated_card.get_parent():
-				animated_card.get_parent().remove_child(animated_card)
-			parent.add_child(animated_card)
-			animated_card.position = target_slot.position
-			animated_card.visible = true
+func _on_card_animation_finished(animated_card: Control, _drawn_card_data: CustomCardData, _target_slot: Node):
+	# The animated card is already in the correct position and showing the right data
+	# Just make sure it's visible and lower its z_index so it doesn't stay on top
+	if animated_card:
+		animated_card.visible = true
+		animated_card.z_index = 0  # Reset from the high z_index used during animation
 	
 	if debug_logging:
 		print("[GM] Card animation finished and placed in hand slot")

@@ -144,9 +144,8 @@ func _on_animation_complete():
 	is_animating = false
 	emit_signal("animation_finished", animating_card)
 	
-	# Remove the card from this animator (it should be handled by the target now)
-	if animating_card and animating_card.get_parent() == self:
-		remove_child(animating_card)
+	# Don't remove the card - let the GameManager handle it
+	# The card should stay visible at its final position
 
 # Clean up tweens
 func _exit_tree():
