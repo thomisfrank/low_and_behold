@@ -19,7 +19,6 @@ shader_parameter/sharpness = 1.5
 
 [node name="cards" type="SubViewportContainer"]
 custom_minimum_size = Vector2(540, 740)
-anchors_preset = 0
 script = ExtResource("1_ucp30")
 
 [node name="CardsViewport" type="SubViewport" parent="."]

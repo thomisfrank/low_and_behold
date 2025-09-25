@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bj4ycv8pfrqj6"
-path="res://.godot/imported/GreenCheckeredPortrait.png-36abcc689484a6b7079ebea29ab5e253.ctex"
+uid="uid://cma1n2py0lpk7"
+path="res://.godot/imported/BlueCheckered.png-70fd601b2f03b03906506badc16b9f33.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/backgrounds/GreenCheckeredPortrait.png"
-dest_files=["res://.godot/imported/GreenCheckeredPortrait.png-36abcc689484a6b7079ebea29ab5e253.ctex"]
+source_file="res://assets/backgrounds/BlueCheckered.png"
+dest_files=["res://.godot/imported/BlueCheckered.png-70fd601b2f03b03906506badc16b9f33.ctex"]
 
 [params]
 

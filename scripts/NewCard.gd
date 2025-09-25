@@ -15,6 +15,13 @@ extends Control
 
 # Card appearance state
 var _material_instanced: bool = false
+var _card_data: CustomCardData = null
+var _orig_z_index: int = 0
+var _orig_scale: Vector2 = Vector2.ONE
+@export var hover_scale: float = 1.07
+@export var hover_z_offset: int = 200
+
+var _hover_active: bool = false
 
 func _ready():
 	if debug_logging:
@@ -26,23 +33,88 @@ func _ready():
 	if moving_gradient and moving_gradient.material:
 		moving_gradient.material.render_priority = -10
 
+	# Ensure this control receives mouse enter/exit events and prints on hover.
+	# Keep behavior simple: always connect and only print in handlers.
+	mouse_filter = Control.MOUSE_FILTER_STOP
+
+	# Register this card so we can resolve which card is visually on top
+	# when multiple cards overlap. We only want the topmost card to print hover.
+	add_to_group("hoverable_cards")
+
+	if not is_connected("mouse_entered", Callable(self, "_on_mouse_entered")):
+		connect("mouse_entered", Callable(self, "_on_mouse_entered"))
+	if not is_connected("mouse_exited", Callable(self, "_on_mouse_exited")):
+		connect("mouse_exited", Callable(self, "_on_mouse_exited"))
+
 # Main function to display a card based on its data resource
 func display(data: CustomCardData):
 	if debug_logging:
 		print("[Card] Displaying card: ", data.card_name, " (", data.effect_type, ")")
-	
+	# Store the data so hover handlers can print useful info
+	_card_data = data
+	# Provide a simple tooltip as well (Godot 4 uses tooltip_text)
+	tooltip_text = data.card_name
+
 	# Step 1: Set up the background colors
 	_setup_background_colors(data)
-	
+
+	# Ensure the control's interactive rect matches the visible background
+	if background_container:
+		# Use the background container's size (plus a small padding) so mouse_enter/exit
+		# target the visible card area even when children are arranged by containers.
+		var pad = Vector2(6, 6)
+		custom_minimum_size = background_container.size + pad
+
+	# store original visual state for hover restore
+	_orig_scale = self.scale
+	_orig_z_index = self.z_index
+
 	# Step 2: Handle frame display based on card type
 	_setup_frame(data)
-	
+
 	# Step 3: Set the icon
 	if icon_node and data.icon:
 		icon_node.texture = data.icon
-	
+
 	# Step 4: Set up text values based on card type
 	_setup_text_values(data)
+
+func _on_mouse_entered():
+	if _hover_active:
+		return
+
+	var global_mouse_pos = get_global_mouse_position()
+	var top_candidate: Control = null
+	var top_z: int = -2147483648
+	for node in get_tree().get_nodes_in_group("hoverable_cards"):
+		if node is Control and node.visible:
+			var c: Control = node
+			if not c.get_global_rect().has_point(global_mouse_pos):
+				continue
+			if c.z_index > top_z:
+				top_z = c.z_index
+				top_candidate = c
+
+	if top_candidate != self:
+		return
+
+	_hover_active = true
+	if _card_data:
+		print("[Card][hover] Enter: ", _card_data.card_name, " value=", _card_data.get_effect_value(), " effect=", _card_data.effect_type)
+	else:
+		print("[Card][hover] Enter: unknown card")
+	# No visual changes here; printing only.
+
+func _on_mouse_exited():
+	if not _hover_active:
+		return
+
+	_hover_active = false
+	if _card_data:
+		print("[Card][hover] Exit: ", _card_data.card_name)
+	else:
+		print("[Card][hover] Exit: unknown card")
+	# No visual changes; printing only.
 
 # Set up the background colors and shader
 func _setup_background_colors(data: CustomCardData):

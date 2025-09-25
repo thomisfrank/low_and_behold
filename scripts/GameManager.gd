@@ -21,6 +21,8 @@ const CardGDScript = preload("res://scripts/NewCard.gd")
 
 var _hand_index: int = 0
 var _card_layer: CanvasLayer  # Dedicated layer for animated cards
+var _last_two_cards: Array[Dictionary] = []  # Track last 2 cards drawn as {value, effect, path}
+var _current_hand_meta: Array[Dictionary] = [] # Track cards placed in the current hand (to enforce per-hand diversity)
 
 
 func _ready():
@@ -136,8 +138,13 @@ func create_card(data: CustomCardData):
 
 func _on_deck_request_draw() -> void:
 	print("[GM] _on_deck_request_draw() called!")
+
+	# If starting a new hand (index 0), clear the per-hand tracking so the next set of draws
+	# will be treated as a fresh hand and will avoid internal duplicates.
+	if _hand_index == 0:
+		_current_hand_meta.clear()
 	# When the deck requests a draw, choose a random front-facing card and animate it to PlayerHand
-	var candidates := [
+	var candidates: Array[String] = [
 		"res://scripts/resources/TwoDraw.tres",
 		"res://scripts/resources/TwoSwap.tres",
 		"res://scripts/resources/FourDraw.tres",
@@ -149,13 +156,22 @@ func _on_deck_request_draw() -> void:
 		"res://scripts/resources/TenDraw.tres",
 		"res://scripts/resources/TenSwap.tres",
 	]
-	# pick a random card resource
-	var idx := randi() % candidates.size()
-	var chosen_path: String = candidates[idx]
+	
+	# Apply smart card selection to avoid repetitive draws
+	var chosen_path: String = _select_smart_card(candidates)
 	var chosen: CustomCardData = load(chosen_path) as CustomCardData
 	if not chosen:
 		push_warning("[GM] Failed to load chosen card resource: %s" % chosen_path)
 		return
+
+	# Build metadata for tracking using the resource path (avoid relying on resource.card_name)
+	var chosen_name := _extract_name_from_path(chosen_path)
+	var chosen_meta := {"value": _extract_value(chosen_name), "effect": _extract_effect(chosen_name), "path": chosen_path}
+
+	# Add this card metadata to our tracking array
+	_track_drawn_card(chosen_meta)
+	# Also add to current hand meta so selection during this hand avoids repeats
+	_current_hand_meta.append(chosen_meta)
 
 	# Find PlayerHand node and the target slot
 	var ph := get_node_or_null("PlayerHand")
@@ -263,8 +279,8 @@ func _on_card_animation_finished(animated_card: Control, _drawn_card_data: Custo
 			elif slot_name.ends_with("4"):
 				slot_index = 3
 			
-			# Cards further right (higher slot index) get higher z_index
-			animated_card.z_index = slot_index * 10
+			# Set z_index to match PlayerHand pattern: 3, 2, 1, 0 (leftmost highest)
+			animated_card.z_index = 3 - slot_index
 			
 			if debug_logging:
 				print("[GM] Card placed in ", slot_name, " with z_index: ", animated_card.z_index)
@@ -283,3 +299,146 @@ func _find_deck_recursive(node: Node) -> Node:
 			return result
 	
 	return null
+
+# Smart card selection to avoid repetitive draws
+func _select_smart_card(candidates: Array[String]) -> String:
+	# Deterministic bucket selection to strongly prefer diversity.
+	# Build lookups for last-two and current-hand to decide conflicts.
+	var last_effects = {}
+	var last_values = {}
+	if _last_two_cards.size() >= 1:
+		var m = _last_two_cards[_last_two_cards.size() - 1]
+		last_effects[m.get("effect", "")] = true
+		last_values[m.get("value", "")] = true
+	if _last_two_cards.size() > 1:
+		var m2 = _last_two_cards[_last_two_cards.size() - 2]
+		last_effects[m2.get("effect", "")] = true
+		last_values[m2.get("value", "")] = true
+
+	var hand_effects = {}
+	var hand_values = {}
+	var hand_paths = {}
+	for meta in _current_hand_meta:
+		hand_effects[meta.get("effect", "")] = true
+		hand_values[meta.get("value", "")] = true
+		hand_paths[meta.get("path", "")] = true
+
+	# 5% chance to allow an exact same resource into the same hand
+	var exact_allow_chance = 5
+
+	# Buckets: 00 = no effect conflict & no value conflict
+	#          01 = no effect conflict & value conflict
+	#          10 = effect conflict & no value conflict
+	#          11 = effect conflict & value conflict
+	var b00: Array[String] = []
+	var b01: Array[String] = []
+	var b10: Array[String] = []
+	var b11: Array[String] = []
+
+	for candidate_path in candidates:
+		# enforce rare exact duplicate rule within same hand
+		if hand_paths.has(candidate_path):
+			var roll := randi() % 100
+			if roll >= exact_allow_chance:
+				# Skip this candidate to make identical resources rare within a hand
+				continue
+		# extract values/effects
+		var cname = _extract_name_from_path(candidate_path)
+		var val = _extract_value(cname)
+		var eff = _extract_effect(cname)
+		var eff_conflict = last_effects.has(eff) or hand_effects.has(eff)
+		var val_conflict = last_values.has(val) or hand_values.has(val)
+		if not eff_conflict and not val_conflict:
+			b00.append(candidate_path)
+		elif not eff_conflict and val_conflict:
+			b01.append(candidate_path)
+		elif eff_conflict and not val_conflict:
+			b10.append(candidate_path)
+		else:
+			b11.append(candidate_path)
+
+	# Prefer buckets in order: b00, b01, b10, b11
+	if not b00.is_empty():
+		if debug_logging:
+			print("[GM] Bucket b00 (no effect/value conflict):", b00)
+			print("[GM] Picked:", b00[randi() % b00.size()])
+		return b00[randi() % b00.size()]
+
+	if not b01.is_empty():
+		if debug_logging:
+			print("[GM] Bucket b01 (value conflict only):", b01)
+		return b01[randi() % b01.size()]
+
+	if not b10.is_empty():
+		if debug_logging:
+			print("[GM] Bucket b10 (effect conflict only):", b10)
+		return b10[randi() % b10.size()]
+
+	# If only fully conflicting candidates remain, pick one (we already tried to exclude exact duplicates above)
+	if not b11.is_empty():
+		if debug_logging:
+			print("[GM] Bucket b11 (both conflicts) - falling back:", b11)
+		return b11[randi() % b11.size()]
+
+	# As a last resort (shouldn't happen), pick random
+	var fallback_idx := randi() % candidates.size()
+	if debug_logging:
+		print("[GM] _select_smart_card: final random fallback:", candidates[fallback_idx])
+	return candidates[fallback_idx]
+
+# Add drawn card metadata to tracking array
+func _track_drawn_card(card_meta: Dictionary) -> void:
+	# card_meta should include keys: "value", "effect", "path"
+	_last_two_cards.append(card_meta)
+	# Keep only the last 2 cards
+	if _last_two_cards.size() > 2:
+		_last_two_cards.pop_front()
+
+# Extract value from card name (e.g., "Two Draw" -> "Two")
+func _extract_value(card_name: String) -> String:
+	if card_name.begins_with("Two"):
+		return "Two"
+	elif card_name.begins_with("Four"):
+		return "Four"
+	elif card_name.begins_with("Six"):
+		return "Six"
+	elif card_name.begins_with("Eight"):
+		return "Eight"
+	elif card_name.begins_with("Ten"):
+		return "Ten"
+	return "Unknown"
+
+# Extract effect from card name (e.g., "Two Draw" -> "Draw")
+func _extract_effect(card_name: String) -> String:
+	if card_name.ends_with("Draw"):
+		return "Draw"
+	elif card_name.ends_with("Swap"):
+		return "Swap"
+	return "Unknown"
+
+# Extract card name from resource path
+func _extract_name_from_path(path: String) -> String:
+	# Convert "res://scripts/resources/TwoDraw.tres" to "TwoDraw"
+	var filename = path.get_file().get_basename()
+	# Convert "TwoDraw" to "Two Draw" format for consistency
+	if filename == "TwoDraw":
+		return "Two Draw"
+	elif filename == "TwoSwap":
+		return "Two Swap"
+	elif filename == "FourDraw":
+		return "Four Draw"
+	elif filename == "FourSwap":
+		return "Four Swap"
+	elif filename == "SixDraw":
+		return "Six Draw"
+	elif filename == "SixSwap":
+		return "Six Swap"
+	elif filename == "EightDraw":
+		return "Eight Draw"
+	elif filename == "EightSwap":
+		return "Eight Swap"
+	elif filename == "TenDraw":
+		return "Ten Draw"
+	elif filename == "TenSwap":
+		return "Ten Swap"
+	return filename

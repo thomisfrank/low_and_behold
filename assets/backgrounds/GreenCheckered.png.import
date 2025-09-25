@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cvwxrtef3vydl"
-path="res://.godot/imported/GreenCheckeredLandscape.png-a956d1acdf1c622efd40f00a76f143ae.ctex"
+uid="uid://vlhc31ljijqr"
+path="res://.godot/imported/GreenCheckered.png-ff95d441e3d1ad55ed29d120bbba51be.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/backgrounds/GreenCheckeredLandscape.png"
-dest_files=["res://.godot/imported/GreenCheckeredLandscape.png-a956d1acdf1c622efd40f00a76f143ae.ctex"]
+source_file="res://assets/backgrounds/GreenCheckered.png"
+dest_files=["res://.godot/imported/GreenCheckered.png-ff95d441e3d1ad55ed29d120bbba51be.ctex"]
 
 [params]
 

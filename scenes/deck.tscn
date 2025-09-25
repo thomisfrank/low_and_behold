@@ -9,61 +9,53 @@ font = ExtResource("3_gdbsr")
 font_size = 150
 
 [node name="Deck" type="SubViewportContainer"]
-offset_right = 40.0
-offset_bottom = 40.0
+custom_minimum_size = Vector2(770, 1080)
+offset_right = 770.0
+offset_bottom = 1080.0
 script = ExtResource("2")
+stack_offset = 20
+stack_x_offset = -16
 
 [node name="DeckViewport" type="SubViewport" parent="."]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(730, 740)
+size = Vector2i(770, 1080)
 render_target_update_mode = 4
 
 [node name="DeckControl" type="Control" parent="DeckViewport"]
-custom_minimum_size = Vector2(800, 740)
+custom_minimum_size = Vector2(770, 1080)
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -368.0
-offset_top = -370.0
-offset_right = 432.0
-offset_bottom = 370.0
-grow_horizontal = 2
-grow_vertical = 2
+anchors_preset = 0
 
 [node name="StackLayers" type="Control" parent="DeckViewport/DeckControl"]
-custom_minimum_size = Vector2(540, 740)
-layout_mode = 1
-anchor_right = 2.7
-anchor_bottom = 2.642857
-offset_right = -1430.0
-offset_bottom = -1215.7142
-grow_horizontal = 2
-grow_vertical = 2
-metadata/_edit_use_anchors_ = true
+custom_minimum_size = Vector2(770, 1080)
+anchors_preset = 0
+offset_right = 770.0
+offset_bottom = 1080.0
 
 [node name="StackLayer3" parent="DeckViewport/DeckControl/StackLayers" instance=ExtResource("1")]
+custom_minimum_size = Vector2(540, 1080)
 layout_mode = 0
 offset_right = 540.0
 offset_bottom = 740.0
 metadata/_edit_use_anchors_ = true
 
 [node name="StackLayer2" parent="DeckViewport/DeckControl/StackLayers" instance=ExtResource("1")]
+custom_minimum_size = Vector2(540, 1080)
 layout_mode = 0
 offset_right = 540.0
 offset_bottom = 740.0
 metadata/_edit_use_anchors_ = true
 
 [node name="StackLayer1" parent="DeckViewport/DeckControl/StackLayers" instance=ExtResource("1")]
+custom_minimum_size = Vector2(540, 1080)
 layout_mode = 0
 offset_right = 540.0
 offset_bottom = 740.0
 metadata/_edit_use_anchors_ = true
 
 [node name="TopCard" parent="DeckViewport/DeckControl" instance=ExtResource("1")]
+custom_minimum_size = Vector2(540, 1080)
 layout_mode = 0
 anchor_right = 2.7
 anchor_bottom = 2.642857
@@ -72,14 +64,12 @@ metadata/_edit_use_anchors_ = true
 [node name="CardCount" type="AspectRatioContainer" parent="DeckViewport/DeckControl"]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 1.42
-anchor_top = 0.78243244
-anchor_right = 1.77
-anchor_bottom = 1.1431469
-offset_left = -559.0
-offset_top = -292.0
-offset_right = -689.0
-offset_bottom = -407.9287
+anchor_left = 0.735
+anchor_top = 0.29569572
+anchor_right = 0.735
+anchor_bottom = 0.29569572
+offset_right = 150.0
+offset_bottom = 151.0
 metadata/_edit_use_anchors_ = true
 
 [node name="ColorRect" type="ColorRect" parent="DeckViewport/DeckControl/CardCount"]
