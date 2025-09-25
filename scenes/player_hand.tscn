@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://lb3wfdukkw5e"]
 
 [ext_resource type="PackedScene" uid="uid://denrvbd0f4xji" path="res://scenes/cards.tscn" id="1_4moqc"]
-[ext_resource type="Script" path="res://scripts/PlayerHand.gd" id="2_hand_script"]
+[ext_resource type="Script" uid="uid://b8036twcnwadc" path="res://scripts/PlayerHand.gd" id="2_hand_script"]
 
 [node name="PlayerHand" type="Control"]
 layout_mode = 3
@@ -11,6 +11,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_hand_script")
+slot_positions = Array[Vector2]([Vector2(162, 844), Vector2(412, 835), Vector2(630, 835), Vector2(866, 835)])
 
 [node name="HandSlot1" parent="." instance=ExtResource("1_4moqc")]
 layout_mode = 1
