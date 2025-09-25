@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://denrvbd0f4xji"]
+[gd_scene load_steps=9 format=3 uid="uid://denrvbd0f4xji"]
 
 [ext_resource type="Shader" uid="uid://f7od31a8h6tp" path="res://scripts/shaders/ActiveCardBackground.gdshader" id="1_02cqd"]
 [ext_resource type="Script" uid="uid://cqtuihqxomav2" path="res://scripts/NewCard.gd" id="1_ucp30"]
@@ -6,6 +6,8 @@
 [ext_resource type="Texture2D" uid="uid://b0v76y6x4qwme" path="res://assets/icons/draw.png" id="5_o7x4b"]
 [ext_resource type="Texture2D" uid="uid://smpakoyyrl7u" path="res://assets/card_resources/BackFrame.png" id="6_ucp30"]
 [ext_resource type="LabelSettings" uid="uid://dagm2nr843ykp" path="res://scripts/resources/CardValueLabelSettings.tres" id="8_value_settings"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ucp30"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pqter"]
 shader = ExtResource("1_02cqd")
@@ -15,11 +17,14 @@ shader_parameter/speed = 0.8
 shader_parameter/intensity = 0.3
 shader_parameter/sharpness = 1.5
 
-[node name="cards" type="Control"]
-layout_mode = 3
-anchors_preset = 0
+[node name="cards" type="Panel"]
+custom_minimum_size = Vector2(540, 740)
+anchors_preset = -1
+anchor_right = 0.17708333
+anchor_bottom = 0.42592594
 offset_right = 200.0
 offset_bottom = 280.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ucp30")
 script = ExtResource("1_ucp30")
 metadata/_edit_use_anchors_ = true
 metadata/_edit_vertical_guides_ = [201.0]
@@ -27,11 +32,14 @@ metadata/_edit_horizontal_guides_ = [274.0]
 
 [node name="Icon" type="AspectRatioContainer" parent="."]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = -1
+anchor_left = 0.031481482
+anchor_top = 0.025675675
+anchor_right = 1.0314815
+anchor_bottom = 1.0256757
 grow_horizontal = 2
 grow_vertical = 2
+metadata/_edit_use_anchors_ = true
 
 [node name="Icon" type="TextureRect" parent="Icon"]
 layout_mode = 2
@@ -41,10 +49,12 @@ texture = ExtResource("5_o7x4b")
 metadata/_edit_use_anchors_ = true
 
 [node name="Values" type="Control" parent="."]
+custom_minimum_size = Vector2(540, 740)
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_left = 0.025925925
+anchor_top = 0.021621622
+anchor_right = 1.0388889
+anchor_bottom = 1.0256757
 grow_horizontal = 2
 grow_vertical = 2
 metadata/_edit_use_anchors_ = true
@@ -52,56 +62,50 @@ metadata/_edit_use_anchors_ = true
 [node name="TopValue" type="Label" parent="Values"]
 texture_filter = 1
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = 1.0
-offset_top = -240.0
-offset_right = 127.0
-offset_bottom = -39.0
+anchors_preset = -1
+anchor_left = 0.7276051
+anchor_top = 0.057873487
+anchor_right = 0.95795244
+anchor_bottom = 0.32839838
 grow_horizontal = 0
 text = "#"
 label_settings = ExtResource("8_value_settings")
 horizontal_alignment = 2
+metadata/_edit_use_anchors_ = true
 
 [node name="BottomValue" type="Label" parent="Values"]
 texture_filter = 1
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = -126.0
-offset_top = -6.0
-offset_bottom = 195.0
+anchors_preset = -1
+anchor_left = 0.10420475
+anchor_top = 0.7254374
+anchor_right = 0.3345521
+anchor_bottom = 0.9959623
 grow_vertical = 0
 text = "#"
 label_settings = ExtResource("8_value_settings")
 vertical_alignment = 2
+metadata/_edit_use_anchors_ = true
 
 [node name="CardBackground" type="AspectRatioContainer" parent="."]
-z_index = -5
+custom_minimum_size = Vector2(540, 740)
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -182.0
-offset_top = -242.0
-offset_right = 182.0
-offset_bottom = 242.0
+anchors_preset = -1
+anchor_left = 0.0018518518
+anchor_top = -0.0013513514
+anchor_right = 1.0537037
+anchor_bottom = 1.0040541
 grow_horizontal = 2
 grow_vertical = 2
+metadata/_edit_use_anchors_ = true
 
 [node name="Padding" type="MarginContainer" parent="CardBackground"]
+custom_minimum_size = Vector2(540, 740)
 layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
 
 [node name="MovingGradient" type="ColorRect" parent="CardBackground/Padding"]
-z_index = 1
 material = SubResource("ShaderMaterial_pqter")
-custom_minimum_size = Vector2(500, 700)
+custom_minimum_size = Vector2(525, 700)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -109,6 +113,7 @@ size_flags_vertical = 4
 [node name="FrontFrame" type="TextureRect" parent="CardBackground/Padding"]
 visibility_layer = 512
 texture_filter = 1
+custom_minimum_size = Vector2(540, 740)
 layout_mode = 2
 texture = ExtResource("2_mnqni")
 
@@ -116,5 +121,6 @@ texture = ExtResource("2_mnqni")
 unique_name_in_owner = true
 visible = false
 texture_filter = 1
+custom_minimum_size = Vector2(540, 740)
 layout_mode = 2
 texture = ExtResource("6_ucp30")

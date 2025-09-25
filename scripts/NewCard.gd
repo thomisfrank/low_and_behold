@@ -10,13 +10,6 @@ extends Control
 @onready var back_frame: TextureRect = $"CardBackground/Padding/BackFrame"
 @onready var background_container: AspectRatioContainer = $"CardBackground"
 
-# Z-index constants for proper layering (bottom to top)
-const BACKGROUND_Z = 0
-const FRAME_Z = 1      # Frame at the bottom
-const GRADIENT_Z = 2   # Gradient in the middle
-const VALUES_Z = 3     # Values on top
-const ICON_Z = 4       # Icon on top
-
 # Debug toggle
 @export var debug_logging: bool = false
 
@@ -27,8 +20,7 @@ func _ready():
 	if debug_logging:
 		print("[Card] _ready: Card node initialized")
 	
-	# Ensure proper z-indexing of all elements
-	_setup_z_indices()
+	# Scene tree order handles layering naturally - no z_index needed
 	
 	# Force gradient shader to render below other elements
 	if moving_gradient and moving_gradient.material:
@@ -51,22 +43,6 @@ func display(data: CustomCardData):
 	
 	# Step 4: Set up text values based on card type
 	_setup_text_values(data)
-
-# Set up proper z-indices for all card elements
-func _setup_z_indices():
-	# Set z-indices to ensure proper stacking within each card
-	if background_container:
-		background_container.z_index = BACKGROUND_Z
-	if moving_gradient:
-		moving_gradient.z_index = GRADIENT_Z
-	if front_frame:
-		front_frame.z_index = FRAME_Z
-	if back_frame:
-		back_frame.z_index = FRAME_Z
-	if icon_node:
-		icon_node.z_index = ICON_Z
-	if values_container:
-		values_container.z_index = VALUES_Z
 
 # Set up the background colors and shader
 func _setup_background_colors(data: CustomCardData):
