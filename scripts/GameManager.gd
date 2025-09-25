@@ -51,13 +51,46 @@ func _ready():
 
 	# Connect to Deck's request_draw signal if Deck exists in the scene
 	var deck_node = get_node_or_null("Deck")
+	
+	if debug_logging:
+		print("[GM] Looking for Deck node...")
+		print("[GM] GameManager path: ", get_path())
+		print("[GM] Direct Deck lookup result: ", deck_node)
+	
+	# If not found as direct child, try to find it in scene tree
 	if not deck_node:
-		deck_node = get_tree().get_root().find_node("Deck", true, false)
+		var main_scene = get_tree().current_scene
+		if main_scene and main_scene != self:
+			deck_node = main_scene.get_node_or_null("Deck")
+			if debug_logging:
+				print("[GM] Tried main_scene.get_node('Deck'): ", deck_node)
+		
+		# Last resort: recursive search
+		if not deck_node:
+			deck_node = _find_deck_recursive(get_tree().root)
+			if debug_logging:
+				print("[GM] Recursive search result: ", deck_node)
+	
+	if debug_logging:
+		if deck_node:
+			print("[GM] Found Deck node at: ", deck_node.get_path())
+			print("[GM] Deck has request_draw signal: ", deck_node.has_signal("request_draw"))
+		else:
+			print("[GM] Could not find Deck node anywhere")
+	
 	if deck_node and deck_node.has_signal("request_draw"):
 		if not deck_node.is_connected("request_draw", Callable(self, "_on_deck_request_draw")):
 			deck_node.connect("request_draw", Callable(self, "_on_deck_request_draw"))
+			if debug_logging:
+				print("[GM] Successfully connected to Deck's request_draw signal")
+		else:
+			if debug_logging:
+				print("[GM] Already connected to Deck's request_draw signal")
+	
 	if debug_logging:
-		print("[GM] Animation settings - flip_duration:", card_draw_flip_duration, " move_duration:", card_draw_move_duration, " scale:", card_final_scale)	# Hide any PlayerHand placeholders so no cards are visible until drawn
+		print("[GM] Animation settings - flip_duration:", card_draw_flip_duration, " move_duration:", card_draw_move_duration, " scale:", card_final_scale)
+	
+	# Hide any PlayerHand placeholders so no cards are visible until drawn
 	var ph = get_node_or_null("PlayerHand")
 	if not ph:
 		ph = get_tree().get_root().find_node("PlayerHand", true, false)
@@ -215,7 +248,38 @@ func _on_card_animation_finished(animated_card: Control, _drawn_card_data: Custo
 	# The animated card is already in the correct position and showing the right data
 	if animated_card:
 		animated_card.visible = true
-		# No z_index management needed with CanvasLayer approach
+		
+		# Set z-index based on hand position for left-to-right stacking
+		# Find which slot this card is in and assign z-index accordingly
+		if _target_slot:
+			var slot_name = _target_slot.name
+			var slot_index = 0
+			if slot_name.ends_with("1"):
+				slot_index = 0
+			elif slot_name.ends_with("2"):
+				slot_index = 1
+			elif slot_name.ends_with("3"):
+				slot_index = 2
+			elif slot_name.ends_with("4"):
+				slot_index = 3
+			
+			# Cards further right (higher slot index) get higher z_index
+			animated_card.z_index = slot_index * 10
+			
+			if debug_logging:
+				print("[GM] Card placed in ", slot_name, " with z_index: ", animated_card.z_index)
 	
 	if debug_logging:
 		print("[GM] Card animation finished and placed in hand slot")
+
+# Helper function to recursively find Deck node
+func _find_deck_recursive(node: Node) -> Node:
+	if node.name == "Deck":
+		return node
+	
+	for child in node.get_children():
+		var result = _find_deck_recursive(child)
+		if result:
+			return result
+	
+	return null

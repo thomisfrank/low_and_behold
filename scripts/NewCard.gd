@@ -1,14 +1,14 @@
 extends Control
 
 # Get node references
-@onready var top_value_label: Label = $"Values/TopValue"
-@onready var bottom_value_label: Label = $"Values/BottomValue"
-@onready var values_container: Control = $"Values"
-@onready var icon_node: TextureRect = $"Icon/Icon"
-@onready var moving_gradient: ColorRect = $"CardBackground/Padding/MovingGradient"
-@onready var front_frame: TextureRect = $"CardBackground/Padding/FrontFrame"
-@onready var back_frame: TextureRect = $"CardBackground/Padding/BackFrame"
-@onready var background_container: AspectRatioContainer = $"CardBackground"
+@onready var top_value_label: Label = $"CardsViewport/CardsLabel/Values/TopValue"
+@onready var bottom_value_label: Label = $"CardsViewport/CardsLabel/Values/BottomValue"
+@onready var values_container: Control = $"CardsViewport/CardsLabel/Values"
+@onready var icon_node: TextureRect = $"CardsViewport/CardsLabel/Icon/Icon"
+@onready var moving_gradient: ColorRect = $"CardsViewport/CardsLabel/CardBackground/Padding/MovingGradient"
+@onready var front_frame: TextureRect = $"CardsViewport/CardsLabel/CardBackground/Padding/FrontFrame"
+@onready var back_frame: TextureRect = $"CardsViewport/CardsLabel/CardBackground/Padding/BackFrame"
+@onready var background_container: AspectRatioContainer = $"CardsViewport/CardsLabel/CardBackground"
 
 # Debug toggle
 @export var debug_logging: bool = false
