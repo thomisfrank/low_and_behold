@@ -1,0 +1,34 @@
+[gd_scene load_steps=5 format=3 uid="uid://dhvcbgkt88duf"]
+
+[ext_resource type="Script" uid="uid://b4emp08et8e7h" path="res://scenes/round_counter.gd" id="1_0kruc"]
+[ext_resource type="Texture2D" uid="uid://xbt7kksolpi7" path="res://assets/UI/RoundCounter.png" id="1_3lywf"]
+[ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="2_0kruc"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_q54xr"]
+font = ExtResource("2_0kruc")
+font_size = 48
+
+[node name="RoundCounter" type="Control"]
+layout_mode = 3
+anchor_right = 0.15208334
+anchor_bottom = 0.094444446
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0kruc")
+
+[node name="Frame" type="TextureRect" parent="."]
+texture_filter = 1
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("1_3lywf")
+
+[node name="Label" type="Label" parent="Frame"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 93.0
+offset_top = 23.0
+offset_right = 243.0
+offset_bottom = 72.0
+text = "round #"
+label_settings = SubResource("LabelSettings_q54xr")
