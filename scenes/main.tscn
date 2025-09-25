@@ -21,28 +21,21 @@ metadata/_edit_vertical_guides_ = [1002.0]
 [node name="backgrounds" parent="." instance=ExtResource("1_o5qli")]
 
 [node name="Deck" parent="." instance=ExtResource("4_jyhfs")]
-anchors_preset = 0
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
-offset_left = 920.0
+custom_minimum_size = Vector2(540, 740)
+offset_left = 890.99994
 offset_top = 454.0
-offset_right = 920.0
-offset_bottom = 454.0
-grow_horizontal = 1
-grow_vertical = 1
+offset_right = 1621.0
+offset_bottom = 1194.0
 scale = Vector2(0.42000002, 0.42000002)
-stack_offset = 25
 
 [node name="PlayerHand" parent="." instance=ExtResource("4_tbgi4")]
 anchors_preset = 13
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = 1017.99994
-offset_top = 940.0
-offset_right = 1017.99994
-offset_bottom = 940.0
+offset_left = 993.0
+offset_top = 910.99994
+offset_right = 993.0
+offset_bottom = 910.99994
 scale = Vector2(0.44, 0.44)
 
 [node name="ScorePanel" parent="." instance=ExtResource("5_tbgi4")]

@@ -49,7 +49,6 @@ func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vec
 	
 	# Create the card instance
 	animating_card = CardScene.instantiate()
-	animating_card.set_script(CardScript)
 	add_child(animating_card)
 	
 	# Position card at starting location

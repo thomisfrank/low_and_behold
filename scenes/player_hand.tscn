@@ -15,39 +15,31 @@ slot_positions = Array[Vector2]([Vector2(688, 835), Vector2(805, 840), Vector2(9
 
 [node name="HandSlot1" parent="." instance=ExtResource("1_4moqc")]
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.084375
+anchor_left = 0.18020834
 anchor_top = 0.7814815
-anchor_right = 0.084375
-anchor_bottom = 0.7814815
-debug_logging = null
+anchor_right = 0.721875
+anchor_bottom = 2.1148148
 
 [node name="HandSlot2" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.21458334
+anchor_left = 0.31041667
 anchor_top = 0.7740741
-anchor_right = 0.21458334
-anchor_bottom = 0.7740741
-debug_logging = null
+anchor_right = 0.8520833
+anchor_bottom = 2.1074073
 
 [node name="HandSlot3" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.328125
+anchor_left = 0.42395833
 anchor_top = 0.7740741
-anchor_right = 0.328125
-anchor_bottom = 0.7740741
-debug_logging = null
+anchor_right = 0.965625
+anchor_bottom = 2.1074073
 
 [node name="HandSlot4" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.45104167
+anchor_left = 0.546875
 anchor_top = 0.7740741
-anchor_right = 0.45104167
-anchor_bottom = 0.7740741
-debug_logging = null
+anchor_right = 1.0885416
+anchor_bottom = 2.1074073
