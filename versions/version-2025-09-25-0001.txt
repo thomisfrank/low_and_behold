@@ -1,0 +1,19 @@
+Version snapshot - 2025-09-25 00:01 UTC
+
+Files changed in workspace (manual snapshot):
+- scripts/Backgrounds.gd  (new autoload-friendly background picker; random background, direction & flip)
+- scenes/backgrounds.tscn (fixed texture path: GreenCheckeredLandscape.png -> GreenCheckered.png)
+- scripts/NewCard.gd     (hover: topmost-by-z_index guard so hidden cards don't print)
+- scripts/PlayerHand.gd  (hover handling tuned earlier; may have reverted; kept print-only behavior)
+
+Summary of changes:
+- Implemented background randomizer with shader scroll direction randomization and optional flip; designed to be added as an autoload 'Backgrounds'.
+- Fixed scene texture reference to remove console load errors.
+- Improved hover printing so only the visually-top card prints Enter/Exit messages (uses group hit-test and z_index check).
+
+Notes:
+- If you want a proper git snapshot/commit, run:
+  git add -A
+  git commit -m "Save snapshot: Backgrounds picker + hover topmost fix + scene texture path fix"
+
+End of snapshot.

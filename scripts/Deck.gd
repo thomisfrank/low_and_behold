@@ -57,6 +57,9 @@ func _ready():
 		# Set position directly (scene file now uses position-based layout)
 		card.position = offset_pos
 		
+		# Force position after everything is set up
+		call_deferred("_force_card_position", card, offset_pos)
+		
 		# Set z-index so bottom cards render behind top cards
 		card.z_index = -(i + 1) * 10  # Bottom card has lowest z-index
 		
@@ -192,6 +195,16 @@ func _debug_card_info(card: Node, expected_name: String) -> void:
 			size_info = " size: " + str(control.size)
 			bounds_info = " bounds: " + str(control.get_rect())
 		print("[Deck] ", expected_name, " actual name: '", card.name, "' position: ", card.position, " global_position: ", card.global_position, size_info, bounds_info)
+
+# Force card position after scene setup
+func _force_card_position(card: Node, target_position: Vector2) -> void:
+	if card and is_instance_valid(card):
+		if card is Control:
+			var control = card as Control
+			# Clear any layout constraints
+			control.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+			control.position = target_position
+			print("[Deck] Forced ", card.name, " to position: ", target_position, " actual: ", control.position)
 		
 # Change the top card by key name (e.g., "TwoSwap", "FourDraw")
 func set_top_card_by_key(key: String) -> void:
