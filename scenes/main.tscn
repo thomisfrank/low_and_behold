@@ -11,6 +11,9 @@ card_data_path = "uid://b32vnfrr06ful"
 card_key = "TwoSwap"
 CardPosition = Vector2(960, 540)
 CardScale = Vector2(0.5, 0.5)
+card_draw_flip_duration = 0.3
+card_draw_move_duration = 0.5
+card_draw_rotation = 5.0
 
 [node name="backgrounds" parent="." instance=ExtResource("1_o5qli")]
 z_index = -100
@@ -41,3 +44,4 @@ offset_right = 923.0
 offset_bottom = 950.0
 grow_vertical = 0
 scale = Vector2(0.44, 0.44)
+script = null
