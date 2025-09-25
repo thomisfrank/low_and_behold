@@ -47,35 +47,27 @@ metadata/_edit_use_anchors_ = true
 
 [node name="StackLayer3" parent="DeckViewport/DeckControl/StackLayers" instance=ExtResource("1")]
 layout_mode = 0
-anchors_preset = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = 0.0
-offset_bottom = 0.0
+offset_right = 540.0
+offset_bottom = 740.0
+metadata/_edit_use_anchors_ = true
 
 [node name="StackLayer2" parent="DeckViewport/DeckControl/StackLayers" instance=ExtResource("1")]
 layout_mode = 0
-anchors_preset = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = 0.0
-offset_bottom = 0.0
+offset_right = 540.0
+offset_bottom = 740.0
+metadata/_edit_use_anchors_ = true
 
 [node name="StackLayer1" parent="DeckViewport/DeckControl/StackLayers" instance=ExtResource("1")]
 layout_mode = 0
-anchors_preset = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_right = 0.0
-offset_bottom = 0.0
+offset_right = 540.0
+offset_bottom = 740.0
+metadata/_edit_use_anchors_ = true
 
 [node name="TopCard" parent="DeckViewport/DeckControl" instance=ExtResource("1")]
 layout_mode = 0
-anchors_preset = 0
 anchor_right = 2.7
 anchor_bottom = 2.642857
-offset_right = 0.0
-offset_bottom = 0.0
+metadata/_edit_use_anchors_ = true
 
 [node name="CardCount" type="AspectRatioContainer" parent="DeckViewport/DeckControl"]
 layout_mode = 1

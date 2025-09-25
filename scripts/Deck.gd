@@ -9,7 +9,8 @@ const DEFAULT_CARD_BACK_PATH = "res://scripts/resources/CardBack.tres"
 @onready var count_label: Label = $DeckViewport/DeckControl/CardCount/CardCountLabel
 
 @export var initial_count: int = 48
-@export var stack_offset: int = 25  # Vertical offset between stacked cards (increased for better visibility when scaled)
+@export var stack_offset: int = 60  # Vertical offset between stacked cards
+@export var stack_x_offset: int = 8  # Small horizontal offset for realistic stacking
 @export_enum("TwoSwap", "TwoDraw", "FourSwap", "FourDraw", "SixSwap", "SixDraw", "EightSwap", "EightDraw", "TenSwap", "TenDraw", "CardBack") var top_card_key: String = "CardBack"
 
 var _count: int = 0
@@ -48,13 +49,18 @@ func _ready():
 	# Create three stacked cards with proper z-indexing and offset
 	for i in range(3):
 		var card = CardScene.instantiate()
-		card.name = "StackLayer%d" % (i + 1)
-		var offset_pos = Vector2(0, i * stack_offset)
-		card.position = offset_pos  # Each card offset below previous
+		var layer_name = "StackLayer%d" % (i + 1)
+		card.name = layer_name
+		# Use both horizontal and vertical offset for realistic stacking (like your Figma mock)
+		var offset_pos = Vector2(i * stack_x_offset, i * stack_offset)
+		
+		# Set position directly (scene file now uses position-based layout)
+		card.position = offset_pos
+		
 		# Set z-index so bottom cards render behind top cards
 		card.z_index = -(i + 1) * 10  # Bottom card has lowest z-index
 		
-		print("[Deck] Creating ", card.name, " at position: ", offset_pos, " with z_index: ", card.z_index)
+		print("[Deck] Creating ", layer_name, " at position: ", offset_pos, " with z_index: ", card.z_index)
 		
 		# Ensure stack cards don't block mouse input (SubViewportContainer structure)
 		if card is Control:
@@ -66,8 +72,8 @@ func _ready():
 		stack_layers.add_child(card)
 		card.call_deferred("display", card_back_data)
 		
-		# Debug: Check actual position after adding to scene
-		call_deferred("_debug_card_position", card)
+		# Debug: Check actual position and size after adding to scene
+		call_deferred("_debug_card_info", card, layer_name)
 	
 	# Set up the top card (draw card)
 	if top_card:
@@ -75,7 +81,11 @@ func _ready():
 	var top = CardScene.instantiate()
 	top.name = "TopCard"
 	top.z_index = 10  # Highest z-index to appear above stack
-	# Allow clicks to pass through to the deck (SubViewportContainer structure)
+	
+	# Set position for top card (scene file now uses position-based layout)
+	top.position = Vector2.ZERO  # Centered
+	
+	# Configure input handling
 	if top is Control:
 		(top as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 		# Also disable input on the SubViewport inside
@@ -83,7 +93,6 @@ func _ready():
 		if top_subviewport and top_subviewport is SubViewport:
 			top_subviewport.gui_disable_input = true
 	add_child(top)
-	top.position = Vector2.ZERO  # Centered
 	
 	# Use the selected top card from the dropdown
 	var top_card_data = _load_card_resource(top_card_key)
@@ -91,6 +100,11 @@ func _ready():
 	top_card = top
 	
 	print("[Deck] Setup complete, top_card_key=", top_card_key)
+	
+	# Debug: Show actual scale information
+	var deck_scale = get_global_transform().get_scale()
+	print("[Deck] Deck global scale: ", deck_scale)
+	print("[Deck] Stack offset (", stack_x_offset, ", ", stack_offset, ") will appear as ~(", stack_x_offset * deck_scale.x, ", ", stack_offset * deck_scale.y, ") pixels on screen")
 	
 	# Connect mouse signals for debugging
 	if not is_connected("mouse_entered", Callable(self, "_on_mouse_entered")):
@@ -169,9 +183,15 @@ func set_top_card(card_data: CustomCardData) -> void:
 		top_card.call_deferred("display", card_data)
 
 # Debug helper to check card positions after they're in the scene tree
-func _debug_card_position(card: Node) -> void:
+func _debug_card_info(card: Node, expected_name: String) -> void:
 	if card and is_instance_valid(card):
-		print("[Deck] ", card.name, " final position: ", card.position, " global_position: ", card.global_position)
+		var size_info = ""
+		var bounds_info = ""
+		if card is Control:
+			var control = card as Control
+			size_info = " size: " + str(control.size)
+			bounds_info = " bounds: " + str(control.get_rect())
+		print("[Deck] ", expected_name, " actual name: '", card.name, "' position: ", card.position, " global_position: ", card.global_position, size_info, bounds_info)
 		
 # Change the top card by key name (e.g., "TwoSwap", "FourDraw")
 func set_top_card_by_key(key: String) -> void:
