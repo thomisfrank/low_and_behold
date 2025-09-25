@@ -70,6 +70,7 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 
 [node name="Icon" type="AspectRatioContainer" parent="."]
+z_index = 1
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.031481482
@@ -88,6 +89,7 @@ texture = ExtResource("5_o7x4b")
 metadata/_edit_use_anchors_ = true
 
 [node name="Values" type="Control" parent="."]
+z_index = 2
 custom_minimum_size = Vector2(540, 740)
 layout_mode = 1
 anchor_left = 0.025925925
