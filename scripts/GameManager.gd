@@ -20,12 +20,18 @@ const CardGDScript = preload("res://scripts/NewCard.gd")
 @export var card_final_scale: Vector2 = Vector2(0.8, 0.8)
 
 var _hand_index: int = 0
+var _card_layer: CanvasLayer  # Dedicated layer for animated cards
 
 
 func _ready():
 	# Do not create any test card at startup; cards should appear only when drawn.
 	# Seed RNG for random draws
 	randomize()
+
+	# Create a dedicated CanvasLayer for card rendering to handle proper layering
+	_card_layer = CanvasLayer.new()
+	_card_layer.name = "CardLayer"
+	add_child(_card_layer)
 
 	# Force reasonable scale if it's too small
 	if card_final_scale.x < 0.1 or card_final_scale.y < 0.1:
@@ -172,7 +178,7 @@ func _on_deck_request_draw() -> void:
 	
 	# Create and start the card draw animation
 	var animator = CardDrawAnimation.new()
-	add_child(animator)
+	_card_layer.add_child(animator)  # Add to dedicated card layer instead of GameManager
 	
 	# Set animation parameters from exports
 	animator.flip_duration = card_draw_flip_duration
