@@ -18,7 +18,6 @@ card_draw_rotation = 0.8
 metadata/_edit_horizontal_guides_ = [849.0, 190.0]
 
 [node name="backgrounds" parent="." instance=ExtResource("1_o5qli")]
-z_index = -100
 
 [node name="Deck" parent="." instance=ExtResource("4_jyhfs")]
 anchors_preset = 0

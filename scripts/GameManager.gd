@@ -20,12 +20,6 @@ const CardGDScript = preload("res://scripts/NewCard.gd")
 @export var card_final_scale: Vector2 = Vector2(0.8, 0.8)
 
 var _hand_index: int = 0
-var _last_card_z_index: int = 10  # Track the z_index of the last placed card - start high so cards are above hand slots
-
-# Get the next z_index for a card (each new card goes behind the previous one)
-func get_next_card_z_index() -> int:
-	_last_card_z_index -= 1  # Each new card goes behind the previous one
-	return _last_card_z_index
 
 
 func _ready():
@@ -213,11 +207,9 @@ func _on_deck_request_draw() -> void:
 # Called when card draw animation finishes
 func _on_card_animation_finished(animated_card: Control, _drawn_card_data: CustomCardData, _target_slot: Node):
 	# The animated card is already in the correct position and showing the right data
-	# Set proper z_index - each new card goes behind the previous one
 	if animated_card:
 		animated_card.visible = true
-		animated_card.z_index = get_next_card_z_index()
+		# No z_index management needed with CanvasLayer approach
 	
 	if debug_logging:
-		var z_value = animated_card.z_index if animated_card else -1
-		print("[GM] Card animation finished and placed in hand slot with z_index: ", z_value)
+		print("[GM] Card animation finished and placed in hand slot")

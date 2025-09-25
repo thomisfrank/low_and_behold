@@ -57,8 +57,7 @@ func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vec
 	animating_card.rotation_degrees = 0
 	# Start with the starting scale, not the target scale
 	animating_card.scale = start_scale
-	# Put the animated card above everything else
-	animating_card.z_index = 100
+	# No z_index needed with CanvasLayer approach
 	print("[CardDrawAnimation] Card starting at scale: ", start_scale, " will animate to: ", target_scale)
 	
 	# Initially show card back (will flip to reveal the actual card)

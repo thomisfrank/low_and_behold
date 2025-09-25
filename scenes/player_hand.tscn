@@ -24,7 +24,6 @@ debug_logging = null
 
 [node name="HandSlot2" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
-z_index = -20
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.21458334
@@ -35,7 +34,6 @@ debug_logging = null
 
 [node name="HandSlot3" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
-z_index = -40
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.328125
@@ -46,7 +44,6 @@ debug_logging = null
 
 [node name="HandSlot4" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
-z_index = -60
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.45104167
