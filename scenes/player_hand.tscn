@@ -11,7 +11,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_hand_script")
-slot_positions = Array[Vector2]([Vector2(162, 844), Vector2(412, 835), Vector2(630, 835), Vector2(866, 835)])
+slot_positions = Array[Vector2]([Vector2(688, 835), Vector2(805, 840), Vector2(912, 830), Vector2(1019, 835)])
 
 [node name="HandSlot1" parent="." instance=ExtResource("1_4moqc")]
 layout_mode = 1

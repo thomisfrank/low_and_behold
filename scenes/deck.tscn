@@ -45,18 +45,18 @@ layout_mode = 0
 
 [node name="ColorRect" type="ColorRect" parent="."]
 layout_mode = 0
-offset_left = 402.0
+offset_left = 371.0
 offset_top = 102.0
-offset_right = 485.0
+offset_right = 454.0
 offset_bottom = 183.0
 color = Color(0, 0, 0, 0.432)
 
 [node name="CardCountLabel" type="Label" parent="."]
 texture_filter = 1
 layout_mode = 0
-offset_left = 405.0
-offset_top = 84.0
-offset_right = 485.0
-offset_bottom = 185.0
+offset_left = 373.0
+offset_top = 83.0
+offset_right = 453.0
+offset_bottom = 184.0
 text = "48"
 label_settings = SubResource("LabelSettings_6rnap")
