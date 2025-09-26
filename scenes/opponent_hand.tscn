@@ -1,0 +1,49 @@
+[gd_scene load_steps=3 format=3 uid="uid://d2xo53nv87pnp"]
+
+[ext_resource type="Script" uid="uid://def0u6qb8h0on" path="res://opponent_hand.gd" id="1_s8uup"]
+[ext_resource type="PackedScene" uid="uid://denrvbd0f4xji" path="res://scenes/cards.tscn" id="2_i4ww5"]
+
+[node name="opponent_hand" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_s8uup")
+slot_positions = Array[Vector2]([Vector2(562, 24), Vector2(757, 24), Vector2(951, 24), Vector2(1141, 24)])
+
+[node name="HandSlot1" parent="." instance=ExtResource("2_i4ww5")]
+layout_mode = 0
+offset_left = 562.0
+offset_top = 24.0
+offset_right = 1102.0
+offset_bottom = 764.0
+scale = Vector2(0.32000244, 0.32000244)
+
+[node name="HandSlot2" parent="." instance=ExtResource("2_i4ww5")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 756.99994
+offset_top = 24.0
+offset_right = 1297.0
+offset_bottom = 764.0
+scale = Vector2(0.32000244, 0.32000244)
+
+[node name="HandSlot3" parent="." instance=ExtResource("2_i4ww5")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 951.0
+offset_top = 24.0
+offset_right = 1491.0
+offset_bottom = 764.0
+scale = Vector2(0.32000244, 0.32000244)
+
+[node name="HandSlot4" parent="." instance=ExtResource("2_i4ww5")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 1141.0
+offset_top = 24.0
+offset_right = 1681.0
+offset_bottom = 764.0
+scale = Vector2(0.32000244, 0.32000244)

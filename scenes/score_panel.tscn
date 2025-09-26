@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://cikg76322k06p"]
 
 [ext_resource type="Texture2D" uid="uid://bxsomb5x1yr6u" path="res://assets/UI/PlayerScoreFrame.png" id="1_27tpy"]
-[ext_resource type="Script" uid="uid://cwnovhw2f2xxh" path="res://scenes/score_panel.gd" id="1_amt3t"]
+[ext_resource type="Script" uid="uid://cwnovhw2f2xxh" path="res://scripts/score_panel.gd" id="1_amt3t"]
 [ext_resource type="Texture2D" uid="uid://bx7cuc4oinduk" path="res://assets/UI/ActionCounterFill.png" id="2_jfakj"]
 [ext_resource type="Texture2D" uid="uid://p78ndvak2hpt" path="res://assets/UI/ActionCounterFrame.png" id="3_amt3t"]
 [ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="3_jfakj"]
@@ -24,6 +24,13 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_amt3t")
+debug = true
+player_fill_path_1 = NodePath("PlayerScore/ScoreFrame/ActivityIndicator/ActionIndicator/Fill")
+player_fill_path_2 = NodePath("PlayerScore/ScoreFrame/ActivityIndicator/ActionIndicator2/Fill")
+opponent_fill_path_1 = NodePath("OpponentScore/frame/ActivityIndicator/ActionIndicator/Fill")
+opponent_fill_path_2 = NodePath("OpponentScore/frame/ActivityIndicator/ActionIndicator2/Fill")
+player_activity_path = NodePath("PlayerScore/ScoreFrame/ActivityIndicator")
+opponent_activity_path = NodePath("OpponentScore/frame/ActivityIndicator")
 
 [node name="PlayerScore" type="Panel" parent="."]
 texture_filter = 1

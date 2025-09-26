@@ -11,7 +11,7 @@ font_size = 180
 
 [node name="Deck" type="SubViewportContainer"]
 custom_minimum_size = Vector2(770, 1080)
-offset_right = 770.0
+offset_right = 922.0
 offset_bottom = 1080.0
 script = ExtResource("2")
 stack_offset = 20
@@ -20,7 +20,7 @@ stack_x_offset = -16
 [node name="DeckViewport" type="SubViewport" parent="."]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(770, 1080)
+size = Vector2i(905, 1080)
 render_target_update_mode = 4
 
 [node name="DeckControl" type="Control" parent="DeckViewport"]
@@ -66,20 +66,21 @@ metadata/_edit_use_anchors_ = true
 [node name="CardCount" type="MarginContainer" parent="DeckViewport/DeckControl"]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.73376626
+anchor_left = 0.87532467
 anchor_top = 0.2212963
-anchor_right = 0.8272727
+anchor_right = 1.0337663
 anchor_bottom = 0.34537038
 offset_right = 150.0
 offset_bottom = 151.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = -35
 metadata/_edit_use_anchors_ = true
 
 [node name="AspectRatioContainer" type="AspectRatioContainer" parent="DeckViewport/DeckControl/CardCount"]
 layout_mode = 2
+size_flags_horizontal = 0
+alignment_horizontal = 0
+alignment_vertical = 0
 
 [node name="ColorRect" type="TextureRect" parent="DeckViewport/DeckControl/CardCount/AspectRatioContainer"]
 layout_mode = 2

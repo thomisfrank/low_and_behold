@@ -18,7 +18,7 @@ paragraph_spacing = 7.0
 font = ExtResource("6_bynor")
 font_size = 28
 
-[node name="DetailBox" type="Control"]
+[node name="detail_box" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -64,10 +64,10 @@ autowrap_mode = 3
 unique_name_in_owner = true
 texture_filter = 1
 layout_mode = 0
-offset_left = 201.00002
-offset_top = 7.0
-offset_right = 215.58333
-offset_bottom = 21.583324
+offset_left = 196.0
+offset_top = 11.999999
+offset_right = 244.0
+offset_bottom = 59.0
 scale = Vector2(0.2800008, 0.2800008)
 texture_normal = ExtResource("5_qx625")
 stretch_mode = 0

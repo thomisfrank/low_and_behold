@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://co3eb35qopnf1"]
+[gd_scene load_steps=9 format=3 uid="uid://co3eb35qopnf1"]
 
 [ext_resource type="PackedScene" uid="uid://wbqyylucvb6b" path="res://scenes/backgrounds.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://bbk834gewqfrh" path="res://scripts/GameManager.gd" id="1_sugp2"]
@@ -6,7 +6,8 @@
 [ext_resource type="PackedScene" uid="uid://lb3wfdukkw5e" path="res://scenes/player_hand.tscn" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://cikg76322k06p" path="res://scenes/score_panel.tscn" id="5_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://dhvcbgkt88duf" path="res://scenes/round_counter.tscn" id="6_tefeu"]
-[ext_resource type="PackedScene" uid="uid://b4h2dmijcovco" path="res://scenes/DetailBox.tscn" id="7_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://b4h2dmijcovco" path="res://scenes/detail_box.tscn" id="7_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://d2xo53nv87pnp" path="res://scenes/opponent_hand.tscn" id="8_tipki"]
 
 [node name="main" type="Node2D"]
 script = ExtResource("1_sugp2")
@@ -18,59 +19,71 @@ card_draw_flip_duration = 0.2
 card_draw_move_duration = 0.2
 card_draw_rotation = 0.8
 metadata/_edit_horizontal_guides_ = [540.0, 190.0]
-metadata/_edit_vertical_guides_ = [960.0]
 
-[node name="backgrounds" parent="." instance=ExtResource("1_o5qli")]
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = -50
 
-[node name="Deck" parent="." instance=ExtResource("4_jyhfs")]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = 871.0
-offset_top = 373.0
-offset_right = 1641.0
-offset_bottom = 1453.0
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(0.42000002, 0.42000002)
+[node name="backgrounds" parent="UILayer" instance=ExtResource("1_o5qli")]
 
-[node name="PlayerHand" parent="." instance=ExtResource("4_tbgi4")]
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-offset_left = 649.0
-offset_top = 673.0
-offset_right = 2067.1816
-offset_bottom = 1409.3636
-grow_vertical = 0
-scale = Vector2(0.44, 0.44)
-
-[node name="PlayerScore" parent="." instance=ExtResource("5_tbgi4")]
+[node name="PlayerScore" parent="UILayer" instance=ExtResource("5_tbgi4")]
 offset_left = 75.0
 offset_top = 849.0
 offset_right = 75.0
 offset_bottom = 849.0
+debug = false
 
-[node name="OppScore" parent="." instance=ExtResource("5_tbgi4")]
+[node name="OppScore" parent="UILayer" instance=ExtResource("5_tbgi4")]
 unique_name_in_owner = true
 offset_left = 68.0
 offset_top = 124.0
 offset_right = 68.0
 offset_bottom = 124.0
-is_player = false
+fills_visible = false
 
-[node name="RoundCounter" parent="." instance=ExtResource("6_tefeu")]
+[node name="RoundCounter" parent="UILayer" instance=ExtResource("6_tefeu")]
 offset_left = 1634.0
-offset_top = 500.0
+offset_top = 492.0
 offset_right = 1634.0
-offset_bottom = 500.0
+offset_bottom = 492.0
+round_count = 1
 
-[node name="DetailBox" parent="." instance=ExtResource("7_o6xl0")]
+[node name="DetailBox" parent="UILayer" instance=ExtResource("7_o6xl0")]
 visible = false
 offset_left = 375.0
 offset_top = 418.0
 offset_right = 375.0
 offset_bottom = 418.0
+
+[node name="GameLayer" type="Node2D" parent="."]
+
+[node name="Deck" parent="GameLayer" instance=ExtResource("4_jyhfs")]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 863.0
+offset_top = 395.0
+offset_right = 1916.5713
+offset_bottom = 1475.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.42000002, 0.42000002)
+
+[node name="PlayerHand" parent="GameLayer" instance=ExtResource("4_tbgi4")]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+offset_left = 637.99994
+offset_top = 673.0
+offset_right = 2056.1816
+offset_bottom = 1409.3636
+grow_vertical = 0
+scale = Vector2(0.44, 0.44)
+
+[node name="opponent_hand" parent="GameLayer" instance=ExtResource("8_tipki")]
+offset_left = 51.0
+offset_top = 1.0
+offset_right = 51.0
+offset_bottom = 1.0
