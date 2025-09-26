@@ -1,457 +1,563 @@
 extends Node2D
 
-const CardScene = preload("res://scenes/cards.tscn")
+#-----------------------------------------------------------------------------
+# Script Configuration
+#-----------------------------------------------------------------------------
 
-# Mark script to preload to avoid shader/material issues
-const CardGDScript = preload("res://scripts/NewCard.gd")
+const CardScene = preload("res://scenes/cards.tscn")
+const CardGDScript = preload("res://scripts/NewCard.gd") # Preload for stability
+const CardBackData = preload("res://scripts/resources/CardBack.tres")
 
 @export var card_data: CustomCardData
 @export_file("*.tres") var card_data_path: String
-@export var card_key: String = "" # e.g., "TwoSwap" will load res://scripts/resources/TwoSwap.tres
+@export var card_key: String = "" # e.g., "TwoSwap" loads res://scripts/resources/TwoSwap.tres
 @export var CardPosition: Vector2 = Vector2.ZERO
 @export var CardScale: Vector2 = Vector2.ONE
 @export var debug_logging: bool = true
 
-# Animation settings
+#-----------------------------------------------------------------------------
+# Animation Settings
+#-----------------------------------------------------------------------------
+
 @export_group("Card Animation")
 @export var card_draw_flip_duration: float = 0.8
 @export var card_draw_move_duration: float = 1.2
 @export var card_draw_rotation: float = 15.0
 @export var card_final_scale: Vector2 = Vector2(0.8, 0.8)
 
-var _hand_index: int = 0
-var _card_layer: CanvasLayer  # Dedicated layer for animated cards
-var _last_two_cards: Array[Dictionary] = []  # Track last 2 cards drawn as {value, effect, path}
-var _current_hand_meta: Array[Dictionary] = [] # Track cards placed in the current hand (to enforce per-hand diversity)
+#-----------------------------------------------------------------------------
+# Internal State
+#-----------------------------------------------------------------------------
 
+var _hand_index: int = 0
+var _card_layer: CanvasLayer
+var _last_two_cards: Array[Dictionary] = []
+var _current_hand_meta: Array[Dictionary] = []
+
+#-----------------------------------------------------------------------------
+# Engine Hooks
+#-----------------------------------------------------------------------------
 
 func _ready():
-	# Do not create any test card at startup; cards should appear only when drawn.
-	# Seed RNG for random draws
 	randomize()
 
-	# Create a dedicated CanvasLayer for card rendering to handle proper layering
+	# Card rendering layer
 	_card_layer = CanvasLayer.new()
 	_card_layer.name = "CardLayer"
 	add_child(_card_layer)
 
-	# Force reasonable scale if it's too small
+	# Enforce reasonable scales
 	if card_final_scale.x < 0.1 or card_final_scale.y < 0.1:
-		push_warning("[GM] Card final scale was too small: ", card_final_scale, " - forcing to (0.8, 0.8)")
+		push_warning("[GM] card_final_scale too small; forcing to (0.8,0.8)")
 		card_final_scale = Vector2(0.8, 0.8)
-	
-	# Also check CardScale (starting scale)
 	if CardScale.x < 0.01 or CardScale.y < 0.01:
-		push_warning("[GM] Card starting scale was too small: ", CardScale, " - forcing to (0.42, 0.42)")
-		CardScale = Vector2(0.42, 0.42)  # Match the deck scale from main.tscn
-	
-	# If deck and hand should be same scale, match them
+		push_warning("[GM] CardScale too small; forcing to (0.42,0.42)")
+		CardScale = Vector2(0.42, 0.42)
 	card_final_scale = CardScale
-	
-	if debug_logging:
-		print("[GM] Animation scale settings - start: ", CardScale, " -> final: ", card_final_scale)
 
-	# Connect to Deck's request_draw signal if Deck exists in the scene
-	var deck_node = get_node_or_null("Deck")
-	
 	if debug_logging:
-		print("[GM] Looking for Deck node...")
-		print("[GM] GameManager path: ", get_path())
-		print("[GM] Direct Deck lookup result: ", deck_node)
-	
-	# If not found as direct child, try to find it in scene tree
-	if not deck_node:
-		var main_scene = get_tree().current_scene
-		if main_scene and main_scene != self:
-			deck_node = main_scene.get_node_or_null("Deck")
-			if debug_logging:
-				print("[GM] Tried main_scene.get_node('Deck'): ", deck_node)
-		
-		# Last resort: recursive search
-		if not deck_node:
-			deck_node = _find_deck_recursive(get_tree().root)
-			if debug_logging:
-				print("[GM] Recursive search result: ", deck_node)
-	
-	if debug_logging:
-		if deck_node:
-			print("[GM] Found Deck node at: ", deck_node.get_path())
-			print("[GM] Deck has request_draw signal: ", deck_node.has_signal("request_draw"))
-		else:
-			print("[GM] Could not find Deck node anywhere")
-	
+		print("[GM] Scales:", CardScale, "->", card_final_scale)
+
+	_connect_to_deck()
+	_hide_placeholders()
+	_configure_score_panels()
+	# Deal a quick opponent hand on load (animated, one-by-one)
+	call_deferred("_deal_initial_opponent_hand")
+
+#-----------------------------------------------------------------------------
+# Deck Handling
+#-----------------------------------------------------------------------------
+
+# Connects to the Deck's request_draw signal.
+func _connect_to_deck():
+	# robustly find the Deck node anywhere under this scene
+	var deck_node = _scene_root().find_child("Deck", true, false)
 	if deck_node and deck_node.has_signal("request_draw"):
 		if not deck_node.is_connected("request_draw", Callable(self, "_on_deck_request_draw")):
 			deck_node.connect("request_draw", Callable(self, "_on_deck_request_draw"))
 			if debug_logging:
-				print("[GM] Successfully connected to Deck's request_draw signal")
-		else:
-			if debug_logging:
-				print("[GM] Already connected to Deck's request_draw signal")
-	
-	if debug_logging:
-		print("[GM] Animation settings - flip_duration:", card_draw_flip_duration, " move_duration:", card_draw_move_duration, " scale:", card_final_scale)
-	
-	# Hide any PlayerHand placeholders so no cards are visible until drawn
-	var ph = get_node_or_null("PlayerHand")
-	if not ph:
-		ph = get_tree().get_root().find_node("PlayerHand", true, false)
-	if ph:
-		for slot_name in ["HandSlot1", "HandSlot2", "HandSlot3", "HandSlot4"]:
-			if ph.has_node(slot_name):
-				var slot = ph.get_node(slot_name)
-				if slot and slot is Node:
-					slot.visible = false
+				print("[GM] Connected to Deck.request_draw")
+	elif debug_logging:
+		print("[GM] Deck node not found")
 
-	# Configure Score Panels
-	var score_panel = get_node_or_null("ScorePanel")
-	if score_panel:
-		var opponent_score = score_panel.get_node_or_null("OpponentScore")
-		if opponent_score:
-			opponent_score.visible = false
-
-	var opp_score_panel = get_node_or_null("OppScore")
-	if opp_score_panel:
-		var player_score = opp_score_panel.get_node_or_null("PlayerScore")
-		if player_score:
-			player_score.visible = false
-
-func create_card(data: CustomCardData):
-	# 1. Instantiate blank card scene
-	var new_card = CardScene.instantiate()
-	
-	# 2. Important: Get references to labels
-	var top_label = new_card.find_child("TopValue", true, false)
-	var bottom_label = new_card.find_child("BottomValue", true, false)
-	
-	# 3. Add to the tree so @onready paths are valid
-	add_child(new_card)
-	
-	# 4. Apply exported transform settings
-	new_card.position = CardPosition
-	new_card.scale = CardScale
-	
-	if debug_logging:
-		var sz := Vector2.ZERO
-		if new_card is Control:
-			sz = (new_card as Control).size
-		print("[GM] Card instantiated: pos=", new_card.position, " scale=", new_card.scale, " size=", sz)
-	
-	# 5. Labels are now positioned directly through scene settings
-	if debug_logging and top_label:
-		print("[GM] Top label position: ", top_label.offset_left, ", ", top_label.offset_top)
-			
-	if debug_logging and bottom_label:
-		print("[GM] Bottom label position: ", bottom_label.offset_left, ", ", bottom_label.offset_top)
-	
-	# 6. Defer display until after the node finishes entering the tree
-	new_card.call_deferred("display", data)
-	if debug_logging:
-		print("[GM] display() deferred with data: ", data)
-
+# Handles the deck's request to draw a card.
 func _on_deck_request_draw() -> void:
-	print("[GM] _on_deck_request_draw() called!")
+	if debug_logging:
+		print("[GM] Deck requested draw")
 
-	# If starting a new hand (index 0), clear the per-hand tracking so the next set of draws
-	# will be treated as a fresh hand and will avoid internal duplicates.
 	if _hand_index == 0:
 		_current_hand_meta.clear()
-	# When the deck requests a draw, choose a random front-facing card and animate it to PlayerHand
-	var candidates: Array[String] = [
-		"res://scripts/resources/TwoDraw.tres",
-		"res://scripts/resources/TwoSwap.tres",
-		"res://scripts/resources/FourDraw.tres",
-		"res://scripts/resources/FourSwap.tres",
-		"res://scripts/resources/SixDraw.tres",
-		"res://scripts/resources/SixSwap.tres",
-		"res://scripts/resources/EightDraw.tres",
-		"res://scripts/resources/EightSwap.tres",
-		"res://scripts/resources/TenDraw.tres",
-		"res://scripts/resources/TenSwap.tres",
-	]
-	
-	# Apply smart card selection to avoid repetitive draws
-	var chosen_path: String = _select_smart_card(candidates)
-	var chosen: CustomCardData = load(chosen_path) as CustomCardData
-	if not chosen:
-		push_warning("[GM] Failed to load chosen card resource: %s" % chosen_path)
+
+	var candidates = _get_card_candidates()
+	var chosen_path = _select_smart_card(candidates)
+	var chosen_data = load(chosen_path) as CustomCardData
+	if not chosen_data:
+		push_warning("[GM] Failed to load chosen card: %s" % chosen_path)
 		return
 
-	# Build metadata for tracking using the resource path (avoid relying on resource.card_name)
-	var chosen_name := _extract_name_from_path(chosen_path)
-	var chosen_meta := {"value": _extract_value(chosen_name), "effect": _extract_effect(chosen_name), "path": chosen_path}
-
-	# Add this card metadata to our tracking array
+	var chosen_meta = _build_card_meta(chosen_path)
 	_track_drawn_card(chosen_meta)
-	# Also add to current hand meta so selection during this hand avoids repeats
 	_current_hand_meta.append(chosen_meta)
 
-	# Find PlayerHand node and the target slot
-	var ph := get_node_or_null("PlayerHand")
-	if not ph:
-		# try root-level path
-		ph = get_node_or_null("/root/Node2D/PlayerHand")
-	if not ph:
+	var player_hand = _scene_root().find_child("PlayerHand", true, false)
+	if not player_hand:
 		push_warning("[GM] PlayerHand node not found; cannot place drawn card")
-		if debug_logging:
-			print("[GM] Available nodes: ", get_children())
 		return
-	else:
-		if debug_logging:
-			print("[GM] Found PlayerHand at: ", ph.get_path())
 
-	# Find Deck node to get the starting position
-	var deck_node = get_node_or_null("Deck")
+	var deck_node = _scene_root().find_child("Deck", true, false)
 	if not deck_node:
 		push_warning("[GM] Deck node not found; cannot animate card draw")
 		return
-	
-	# Get deck position as starting point
-	var deck_pos = deck_node.global_position
-	
-	# Find target slot and position
-	var placeholders := ["HandSlot1", "HandSlot2", "HandSlot3", "HandSlot4"]
-	var target_position: Vector2
-	var target_slot: Node = null
-	
-	if _hand_index < placeholders.size():
-		var target_name: String = placeholders[_hand_index]
-		if ph.has_node(target_name):
-			target_slot = ph.get_node(target_name)
-			
-			# Check if PlayerHand has the custom positioning method
-			if ph.has_method("get_slot_position"):
-				target_position = ph.get_slot_position(_hand_index)
-				if debug_logging:
-					print("[GM] Targeting slot ", target_name, " (index ", _hand_index, ") at custom position ", target_position)
-			else:
-				# Fall back to using the actual node's position
-				target_position = target_slot.global_position  
-				if debug_logging:
-					print("[GM] Targeting slot ", target_name, " (index ", _hand_index, ") at node position ", target_position)
-					print("[GM] PlayerHand doesn't have custom positioning, using node positions")
-		else:
-			push_warning("[GM] Target slot %s not found" % target_name)
-			return
-	else:
-		# No more slots available
-		push_warning("[GM] No more hand slots available")
+
+	var start_pos = deck_node.global_position
+	var target_slot = _get_target_slot(player_hand)
+	if not target_slot:
 		return
-	
-	# Create and start the card draw animation
+
+	var target_pos = _get_target_position(player_hand, target_slot)
+
+	_start_card_animation(chosen_data, start_pos, target_pos, target_slot)
+
+	_hand_index += 1
+	_update_deck_count(deck_node)
+
+#-----------------------------------------------------------------------------
+# Card Creation & Animation
+#-----------------------------------------------------------------------------
+
+# Creates a new card instance.
+func create_card(data: CustomCardData):
+	var new_card = CardScene.instantiate()
+	add_child(new_card)
+	new_card.position = CardPosition
+	new_card.scale = CardScale
+	new_card.call_deferred("display", data)
+	if debug_logging:
+		print("[GM] Card instantiated:", new_card.position, new_card.scale)
+
+# Starts the card draw animation.
+func _start_card_animation(data: CustomCardData, start_pos: Vector2, target_pos: Vector2, target_slot: Node, p_final_scale: Variant = null, p_start_scale: Variant = null) -> void:
 	var animator = CardDrawAnimation.new()
-	_card_layer.add_child(animator)  # Add to dedicated card layer instead of GameManager
-	
-	# Set animation parameters from exports
+	_card_layer.add_child(animator)
+
 	animator.flip_duration = card_draw_flip_duration
 	animator.move_duration = card_draw_move_duration
 	animator.rotation_angle = card_draw_rotation
-	animator.final_scale = card_final_scale
-	
-	# Safety check for reasonable scale values
-	if card_final_scale.x < 0.1 or card_final_scale.y < 0.1:
-		push_warning("[GM] Card scale is very small: ", card_final_scale, " - this may make cards invisible!")
-		card_final_scale = Vector2(0.8, 0.8)  # Use reasonable default
+
+	# allow per-animation override of scales
+	if p_final_scale != null:
+		animator.final_scale = p_final_scale
+	else:
 		animator.final_scale = card_final_scale
-	
-	# Connect to animation finished signal
-	animator.connect("animation_finished", Callable(self, "_on_card_animation_finished").bind(chosen, target_slot))
-	
-	# Start the animation from deck to hand slot with proper scaling
-	# CardScale is the deck's scale, card_final_scale is the target scale in hand
-	animator.animate_card_draw(chosen, deck_pos, target_position, 0.0, card_final_scale, CardScale)
-	
+
+	var start_scale = p_start_scale if p_start_scale != null else CardScale
+
+	if animator.final_scale.x < 0.05 or animator.final_scale.y < 0.05:
+		push_warning("[GM] Card final scale very small; forcing to (0.8,0.8)")
+		animator.final_scale = Vector2(0.8, 0.8)
+
+	# Minimal debug: log that an animator was started and what slot it's targeting
+	var slot_path = "(null)"
+	if target_slot:
+		slot_path = str(target_slot.get_path())
 	if debug_logging:
-		print("[GM] Started animated card draw: ", chosen_path, " from ", deck_pos, " to ", target_position)
-		print("[GM] Scale animation: ", CardScale, " -> ", card_final_scale)
-	
-	_hand_index += 1
+		print("[GM] _start_card_animation -> data:", data, " target_slot:", slot_path, " final_scale=", animator.final_scale)
 
-	# Update deck visual count if deck exposes set_count
-	if deck_node and deck_node.has_method("get_count") and deck_node.has_method("set_count"):
-		var current = deck_node.call("get_count")
-		deck_node.call("set_count", max(0, int(current) - 1))
+	# No immediate back placement here; let the animator finish and reveal the card.
+	animator.connect("animation_finished", Callable(self, "_on_card_animation_finished").bind(data, target_slot))
+	# If this animation targets an opponent slot, ask the animator not to reveal the face
+	var suppress_reveal_flag = false
+	if target_slot and _is_slot_in_opponent_hand(target_slot):
+		suppress_reveal_flag = true
+		if debug_logging:
+			print("[GM] Detected opponent slot; suppressing reveal for:", slot_path)
+	animator.animate_card_draw(data, start_pos, target_pos, 0.0, animator.final_scale, start_scale, suppress_reveal_flag)
+	if debug_logging:
+		print("[GM] Started draw", start_pos, "->", target_pos, " final_scale=", animator.final_scale, " start_scale=", start_scale)
 
-# Called when card draw animation finishes
-func _on_card_animation_finished(animated_card: Control, _drawn_card_data: CustomCardData, _target_slot: Node):
-	# The animated card is already in the correct position and showing the right data
+# Called when the card draw animation finishes.
+func _on_card_animation_finished(animated_card: Control, _drawn_card_data: CustomCardData, _target_slot: Node) -> void:
+	# animated_card is the temporary flying visual created by CardDrawAnimation
+	# Quick unconditional debug print to ensure this handler runs in all builds
+	print("[GM] _on_card_animation_finished called -> animated_card:", animated_card, " drawn:", _drawn_card_data, " target_slot:", _target_slot)
+	if not _drawn_card_data:
+		return
+
+	var is_opp_slot = _is_slot_in_opponent_hand(_target_slot)
+	# always log slot detection result for debugging
+	if _target_slot:
+		print("[GM] slot detection: is_opp_slot=", is_opp_slot, " slot_path=", _target_slot.get_path())
+	else:
+		print("[GM] slot detection: target_slot is null")
+
+	if is_opp_slot and is_instance_valid(_target_slot):
+		# Store the real card data on the slot for game logic.
+		_target_slot.set_meta("hidden_card_data", _drawn_card_data)
+
+		# The HandSlot nodes are already instances of the card scene and
+		# implement `display()`. Call display() on the slot itself with the
+		# CardBack resource so we don't remove the slot internals.
+		if _target_slot.has_method("display"):
+			_target_slot.call_deferred("display", CardBackData)
+		else:
+			# As a last resort, try to find a descendant with display() (rare)
+			var desc = null
+			for c in _target_slot.get_children():
+				if c and c.has_method and c.has_method("display"):
+					desc = c
+					break
+			if desc:
+				desc.call_deferred("display", CardBackData)
+
+		# Ensure the slot is visible and free the animated flying card.
+		if _target_slot is CanvasItem:
+			_target_slot.visible = true
+
+		if animated_card and animated_card.is_inside_tree():
+			animated_card.queue_free()
+
+		if debug_logging:
+			print("[GM] Opponent slot '", _target_slot.name, "' populated with CardBack (via display()).")
+		return
+
+	# Player (or non-opponent) slot behavior: keep animated card visible and set z
 	if animated_card:
 		animated_card.visible = true
-		
-		# Set z-index based on hand position for left-to-right stacking
-		# Find which slot this card is in and assign z-index accordingly
 		if _target_slot:
-			var slot_name = _target_slot.name
-			var slot_index = 0
-			if slot_name.ends_with("1"):
-				slot_index = 0
-			elif slot_name.ends_with("2"):
-				slot_index = 1
-			elif slot_name.ends_with("3"):
-				slot_index = 2
-			elif slot_name.ends_with("4"):
-				slot_index = 3
-			
-			# Set z_index to match PlayerHand pattern: 3, 2, 1, 0 (leftmost highest)
-			animated_card.z_index = 3 - slot_index
-			
-			if debug_logging:
-				print("[GM] Card placed in ", slot_name, " with z_index: ", animated_card.z_index)
-	
+			var slot_index = _get_slot_index(_target_slot.name) if _target_slot and _target_slot.name else -1
+			if slot_index >= 0:
+				animated_card.z_index = 3 - slot_index
+				if debug_logging:
+					print("[GM] Placed in", _target_slot.name, "z=", animated_card.z_index)
+
 	if debug_logging:
-		print("[GM] Card animation finished and placed in hand slot")
+		print("[GM] Animation finished for", _drawn_card_data)
 
-# Helper function to recursively find Deck node
-func _find_deck_recursive(node: Node) -> Node:
-	if node.name == "Deck":
-		return node
-	
-	for child in node.get_children():
-		var result = _find_deck_recursive(child)
-		if result:
-			return result
-	
-	return null
 
-# Smart card selection to avoid repetitive draws
+	# Player (or non-opponent) slot behavior: keep animated card visible and set z
+	if animated_card:
+		animated_card.visible = true
+		if _target_slot:
+			var slot_index = _get_slot_index(_target_slot.name) if _target_slot and _target_slot.name else -1
+			if slot_index >= 0:
+				animated_card.z_index = 3 - slot_index
+				if debug_logging:
+					print("[GM] Placed in", _target_slot.name, "z=", animated_card.z_index)
+
+	if debug_logging:
+		print("[GM] Animation finished for", _drawn_card_data)
+
+func _is_slot_in_opponent_hand(slot: Node) -> bool:
+	if not slot:
+		return false
+
+	# Prefer an explicit ancestry check: find the opponent_hand node in the scene
+	# and see if it's an ancestor of the provided slot. This is far more
+	# reliable than string-matching node names (which can fail if nodes are
+	# renamed or reparented).
+	var root = _scene_root()
+	if not root:
+		return false
+
+	var opp_hand = root.find_child("opponent_hand", true, false)
+	if opp_hand:
+		# Walk up the parent chain from the slot to see if we hit opp_hand
+		var cur: Node = slot
+		while cur:
+			if cur == opp_hand:
+				return true
+			cur = cur.get_parent()
+
+	return false
+
+#-----------------------------------------------------------------------------
+# UI & Initialization Helpers
+#-----------------------------------------------------------------------------
+
+# Hides placeholder cards in the player's hand.
+func _hide_placeholders():
+	var ph = _scene_root().find_child("PlayerHand", true, false)
+	if ph:
+		for i in range(1, 5):
+			var slot = ph.get_node_or_null("HandSlot" + str(i))
+			if slot:
+				slot.visible = false
+
+# Configures the initial state of the score panels.
+func _configure_score_panels():
+	# Explicitly target the instantiated score panel nodes by the names used
+	# in the main scene. Each instance of the ScorePanel packed scene contains
+	# both a PlayerScore and OpponentScore child; hide the opposite child on
+	# each instance so the UI shows the correct side.
+	var player_instance = _scene_root().find_child("PlayerScore", true, false)
+	if player_instance and player_instance.has_node("OpponentScore"):
+		player_instance.get_node("OpponentScore").visible = false
+
+	var opponent_instance = _scene_root().find_child("OppScore", true, false)
+	if opponent_instance and opponent_instance.has_node("PlayerScore"):
+		opponent_instance.get_node("PlayerScore").visible = false
+
+#-----------------------------------------------------------------------------
+# Card Selection Logic
+#-----------------------------------------------------------------------------
+
+# Selects a card from the candidates using a smart algorithm to avoid repetition.
 func _select_smart_card(candidates: Array[String]) -> String:
-	# Deterministic bucket selection to strongly prefer diversity.
-	# Build lookups for last-two and current-hand to decide conflicts.
 	var last_effects = {}
 	var last_values = {}
-	if _last_two_cards.size() >= 1:
-		var m = _last_two_cards[_last_two_cards.size() - 1]
-		last_effects[m.get("effect", "")] = true
-		last_values[m.get("value", "")] = true
+	if _last_two_cards.size() > 0:
+		var m1 = _last_two_cards[_last_two_cards.size() - 1]
+		last_effects[m1.get("effect", "")] = true
+		last_values[m1.get("value", "")] = true
 	if _last_two_cards.size() > 1:
 		var m2 = _last_two_cards[_last_two_cards.size() - 2]
 		last_effects[m2.get("effect", "")] = true
 		last_values[m2.get("value", "")] = true
 
-	var hand_effects = {}
-	var hand_values = {}
 	var hand_paths = {}
 	for meta in _current_hand_meta:
-		hand_effects[meta.get("effect", "")] = true
-		hand_values[meta.get("value", "")] = true
 		hand_paths[meta.get("path", "")] = true
 
-	# 5% chance to allow an exact same resource into the same hand
-	var exact_allow_chance = 5
-
-	# Buckets: 00 = no effect conflict & no value conflict
-	#          01 = no effect conflict & value conflict
-	#          10 = effect conflict & no value conflict
-	#          11 = effect conflict & value conflict
 	var b00: Array[String] = []
 	var b01: Array[String] = []
 	var b10: Array[String] = []
 	var b11: Array[String] = []
-
-	for candidate_path in candidates:
-		# enforce rare exact duplicate rule within same hand
-		if hand_paths.has(candidate_path):
-			var roll := randi() % 100
-			if roll >= exact_allow_chance:
-				# Skip this candidate to make identical resources rare within a hand
-				continue
-		# extract values/effects
-		var cname = _extract_name_from_path(candidate_path)
+	for path in candidates:
+		if hand_paths.has(path) and randi() % 100 >= 5:
+			continue
+		var cname = _extract_name_from_path(path)
 		var val = _extract_value(cname)
 		var eff = _extract_effect(cname)
-		var eff_conflict = last_effects.has(eff) or hand_effects.has(eff)
-		var val_conflict = last_values.has(val) or hand_values.has(val)
+		var eff_conflict = last_effects.has(eff)
+		var val_conflict = last_values.has(val)
 		if not eff_conflict and not val_conflict:
-			b00.append(candidate_path)
+			b00.append(path)
 		elif not eff_conflict and val_conflict:
-			b01.append(candidate_path)
+			b01.append(path)
 		elif eff_conflict and not val_conflict:
-			b10.append(candidate_path)
+			b10.append(path)
 		else:
-			b11.append(candidate_path)
+			b11.append(path)
 
-	# Prefer buckets in order: b00, b01, b10, b11
 	if not b00.is_empty():
-		if debug_logging:
-			print("[GM] Bucket b00 (no effect/value conflict):", b00)
-			print("[GM] Picked:", b00[randi() % b00.size()])
 		return b00[randi() % b00.size()]
-
 	if not b01.is_empty():
-		if debug_logging:
-			print("[GM] Bucket b01 (value conflict only):", b01)
 		return b01[randi() % b01.size()]
-
 	if not b10.is_empty():
-		if debug_logging:
-			print("[GM] Bucket b10 (effect conflict only):", b10)
 		return b10[randi() % b10.size()]
-
-	# If only fully conflicting candidates remain, pick one (we already tried to exclude exact duplicates above)
 	if not b11.is_empty():
-		if debug_logging:
-			print("[GM] Bucket b11 (both conflicts) - falling back:", b11)
 		return b11[randi() % b11.size()]
+	return candidates[randi() % candidates.size()]
 
-	# As a last resort (shouldn't happen), pick random
-	var fallback_idx := randi() % candidates.size()
-	if debug_logging:
-		print("[GM] _select_smart_card: final random fallback:", candidates[fallback_idx])
-	return candidates[fallback_idx]
-
-# Add drawn card metadata to tracking array
+# Tracks the last two drawn cards.
 func _track_drawn_card(card_meta: Dictionary) -> void:
-	# card_meta should include keys: "value", "effect", "path"
 	_last_two_cards.append(card_meta)
-	# Keep only the last 2 cards
 	if _last_two_cards.size() > 2:
 		_last_two_cards.pop_front()
 
-# Extract value from card name (e.g., "Two Draw" -> "Two")
+#-----------------------------------------------------------------------------
+# Utility Functions
+#-----------------------------------------------------------------------------
+
+# Recursively finds the Deck node in the scene.
+func _find_deck_recursive(node: Node) -> Node:
+	if node.name == "Deck":
+		return node
+	for child in node.get_children():
+		var result = _find_deck_recursive(child)
+		if result:
+			return result
+	return null
+
+# Returns the most appropriate scene root to search under (current scene or first child of root)
+func _scene_root() -> Node:
+	var s = get_tree().get_current_scene()
+	if s:
+		return s
+	if get_tree().get_root().get_child_count() > 0:
+		return get_tree().get_root().get_child(0)
+	return get_tree().get_root()
+
+# Returns the list of card resource paths.
+func _get_card_candidates() -> Array[String]:
+	return [
+		"res://scripts/resources/TwoDraw.tres", "res://scripts/resources/TwoSwap.tres",
+		"res://scripts/resources/FourDraw.tres", "res://scripts/resources/FourSwap.tres",
+		"res://scripts/resources/SixDraw.tres", "res://scripts/resources/SixSwap.tres",
+		"res://scripts/resources/EightDraw.tres", "res://scripts/resources/EightSwap.tres",
+		"res://scripts/resources/TenDraw.tres", "res://scripts/resources/TenSwap.tres"
+	]
+
+# -----------------------------------------------------------------------------
+# Opponent startup quick-draw helpers
+# -----------------------------------------------------------------------------
+func _deal_initial_opponent_hand() -> void:
+	var opp_hand = _scene_root().find_child("OppHand", true, false)
+	if not opp_hand:
+		# try alternative node names used in scenes (case variations)
+		opp_hand = _scene_root().find_child("OpponentHand", true, false)
+	if not opp_hand:
+		opp_hand = _scene_root().find_child("opponent_hand", true, false)
+	if not opp_hand:
+		opp_hand = _scene_root().find_child("opponentHand", true, false)
+	if not opp_hand:
+		if debug_logging:
+			print("[GM] No opponent hand found on startup; skipping initial deal")
+		return
+	elif debug_logging:
+		print("[GM] Found opponent hand:", opp_hand.get_path())
+
+	# Number of cards to deal to opponent (use max_cards if available)
+	var count = 4
+	# try to read an exported max_cards property if present on the opponent hand
+	var maybe_max = null
+	# safe get: returns null if property doesn't exist
+	maybe_max = opp_hand.get("max_cards") if opp_hand else null
+	if typeof(maybe_max) == TYPE_INT or typeof(maybe_max) == TYPE_FLOAT:
+		count = int(maybe_max)
+	if debug_logging:
+		print("[GM] Dealing", count, "cards to", opp_hand.name)
+
+	# Prepare short animation parameters (very quick)
+	var orig_flip = card_draw_flip_duration
+	var orig_move = card_draw_move_duration
+	card_draw_flip_duration = 0.12
+	card_draw_move_duration = 0.18
+
+	# Sequentially draw into opponent hand with tiny delay between each
+	for i in range(count):
+		# pick a candidate and animate draw from deck to opponent slot
+		var candidates = _get_card_candidates()
+		var chosen_path = _select_smart_card(candidates)
+		var chosen_data = load(chosen_path) as CustomCardData
+		if not chosen_data:
+			continue
+
+		# find deck position
+		var deck_node = _scene_root().find_child("Deck", true, false)
+		if not deck_node:
+			continue
+		var start_pos = deck_node.global_position
+
+		# determine the target slot node on the opponent hand
+		var target_slot: Node = null
+		# Prefer scanning slots by index so we can skip already-reserved ones
+		var max_slots = 4
+		var maybe_max_slots = opp_hand.get("max_cards") if opp_hand and opp_hand.has_method("get") else null
+		if typeof(maybe_max_slots) == TYPE_INT:
+			max_slots = int(maybe_max_slots)
+		if opp_hand.has_method("get_slot"):
+			for j in range(max_slots):
+				var candidate = opp_hand.get_slot(j)
+				if candidate and not candidate.visible and not (candidate.has_meta("reserved") and candidate.get_meta("reserved")):
+					target_slot = candidate
+					break
+		# fallback to get_next_empty_slot if none found
+		if not target_slot and opp_hand.has_method("get_next_empty_slot"):
+			var cand = opp_hand.get_next_empty_slot()
+			if cand and not (cand.has_meta("reserved") and cand.get_meta("reserved")):
+				target_slot = cand
+		# fallback: if we still don't have a slot, skip
+		if not target_slot:
+			continue
+
+		# Mark the slot reserved so subsequent draws don't reuse it while animating
+		if target_slot:
+			target_slot.set_meta("reserved", true)
+			# Hide the slot visually until the animation finishes so nothing is visible prematurely
+			if target_slot is CanvasItem:
+				target_slot.visible = false
+
+		var target_pos = Vector2.ZERO
+		if opp_hand.has_method("get_slot_position"):
+			target_pos = opp_hand.get_slot_position(i)
+		elif target_slot:
+			target_pos = target_slot.global_position
+
+		# determine the final scale for the slot: prefer the slot's current scale, then opp_hand exported slot_scales, else 0.32
+		var slot_final_scale: Vector2 = Vector2(0.32, 0.32)
+		if target_slot and (target_slot is Node2D or target_slot is CanvasItem):
+			slot_final_scale = target_slot.scale
+		elif opp_hand and opp_hand.has_method("get_slot_position"):
+			# try reading exported slot_scales from the opponent hand if present
+			var maybe_scales = null
+			maybe_scales = opp_hand.get("slot_scales") if opp_hand else null
+			if typeof(maybe_scales) == TYPE_ARRAY and i < maybe_scales.size():
+				var s = maybe_scales[i]
+				if typeof(s) == TYPE_VECTOR2:
+					slot_final_scale = s
+
+		# start animation targeting the actual slot node, pass final scale so the animator matches the slot
+		_start_card_animation(chosen_data, start_pos, target_pos, target_slot, slot_final_scale, CardScale)
+
+		# slight pause between draws so animations stagger (yield)
+		await get_tree().create_timer(0.06).timeout
+
+	# restore original timings
+	card_draw_flip_duration = orig_flip
+	card_draw_move_duration = orig_move
+
+# Builds metadata for a card from its resource path.
+func _build_card_meta(path: String) -> Dictionary:
+	var card_name = _extract_name_from_path(path)
+	return {"value": _extract_value(card_name), "effect": _extract_effect(card_name), "path": path}
+
+# Gets the target hand slot for the next card.
+func _get_target_slot(player_hand: Node) -> Node:
+	var placeholders = ["HandSlot1", "HandSlot2", "HandSlot3", "HandSlot4"]
+	if _hand_index < placeholders.size():
+		var target_name = placeholders[_hand_index]
+		if player_hand.has_node(target_name):
+			return player_hand.get_node(target_name)
+		else:
+			push_warning("[GM] Target slot %s not found" % target_name)
+	else:
+		push_warning("[GM] No more hand slots available")
+	return null
+
+# Gets the target position for the card in the hand.
+func _get_target_position(player_hand: Node, target_slot: Node) -> Vector2:
+	if player_hand.has_method("get_slot_position"):
+		return player_hand.get_slot_position(_hand_index)
+	return target_slot.global_position
+
+# Updates the visual count of the deck.
+func _update_deck_count(deck_node: Node):
+	if deck_node and deck_node.has_method("get_count") and deck_node.has_method("set_count"):
+		var current_count = deck_node.call("get_count")
+		deck_node.call("set_count", max(0, int(current_count) - 1))
+
+# Extracts the card's base value from its name.
 func _extract_value(card_name: String) -> String:
-	if card_name.begins_with("Two"):
-		return "Two"
-	elif card_name.begins_with("Four"):
-		return "Four"
-	elif card_name.begins_with("Six"):
-		return "Six"
-	elif card_name.begins_with("Eight"):
-		return "Eight"
-	elif card_name.begins_with("Ten"):
-		return "Ten"
+	if card_name.begins_with("Two"): return "Two"
+	if card_name.begins_with("Four"): return "Four"
+	if card_name.begins_with("Six"): return "Six"
+	if card_name.begins_with("Eight"): return "Eight"
+	if card_name.begins_with("Ten"): return "Ten"
 	return "Unknown"
 
-# Extract effect from card name (e.g., "Two Draw" -> "Draw")
+# Extracts the card's effect from its name.
 func _extract_effect(card_name: String) -> String:
-	if card_name.ends_with("Draw"):
-		return "Draw"
-	elif card_name.ends_with("Swap"):
-		return "Swap"
+	if card_name.ends_with("Draw"): return "Draw"
+	if card_name.ends_with("Swap"): return "Swap"
 	return "Unknown"
 
-# Extract card name from resource path
+# Extracts a clean name from the card's resource path.
 func _extract_name_from_path(path: String) -> String:
-	# Convert "res://scripts/resources/TwoDraw.tres" to "TwoDraw"
 	var filename = path.get_file().get_basename()
-	# Convert "TwoDraw" to "Two Draw" format for consistency
-	if filename == "TwoDraw":
-		return "Two Draw"
-	elif filename == "TwoSwap":
-		return "Two Swap"
-	elif filename == "FourDraw":
-		return "Four Draw"
-	elif filename == "FourSwap":
-		return "Four Swap"
-	elif filename == "SixDraw":
-		return "Six Draw"
-	elif filename == "SixSwap":
-		return "Six Swap"
-	elif filename == "EightDraw":
-		return "Eight Draw"
-	elif filename == "EightSwap":
-		return "Eight Swap"
-	elif filename == "TenDraw":
-		return "Ten Draw"
-	elif filename == "TenSwap":
-		return "Ten Swap"
-	return filename
+	var name_map = {
+		"TwoDraw": "Two Draw", "TwoSwap": "Two Swap",
+		"FourDraw": "Four Draw", "FourSwap": "Four Swap",
+		"SixDraw": "Six Draw", "SixSwap": "Six Swap",
+		"EightDraw": "Eight Draw", "EightSwap": "Eight Swap",
+		"TenDraw": "Ten Draw", "TenSwap": "Ten Swap"
+	}
+	return name_map.get(filename, filename)
+
+# Gets the index of a hand slot from its name.
+func _get_slot_index(slot_name: String) -> int:
+	if slot_name.ends_with("1"): return 0
+	if slot_name.ends_with("2"): return 1
+	if slot_name.ends_with("3"): return 2
+	if slot_name.ends_with("4"): return 3
+	return 0

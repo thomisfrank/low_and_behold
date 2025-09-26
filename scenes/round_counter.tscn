@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://dhvcbgkt88duf"]
 
-[ext_resource type="Script" uid="uid://b4emp08et8e7h" path="res://scenes/round_counter.gd" id="1_0kruc"]
+[ext_resource type="Script" uid="uid://b4emp08et8e7h" path="res://scripts/round_counter.gd" id="1_0kruc"]
 [ext_resource type="Texture2D" uid="uid://xbt7kksolpi7" path="res://assets/UI/RoundCounter.png" id="1_3lywf"]
 [ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="2_0kruc"]
 

@@ -1,8 +1,13 @@
 extends Node2D
 class_name CardDrawAnimation
+@export var debug_logging: bool = false
 
-# Animation system for drawing cards with flip, rotation, and scaling
-# Based on the flip_animation.tscn but using actual card instances
+#-----------------------------------------------------------------------------
+# Card draw animation
+# Handles a flip + move animation for created card instances. The animation
+# instantiates a card, shows the back, flips it during movement, then reveals
+# the provided card data. Emits `animation_finished(card)` when done.
+#-----------------------------------------------------------------------------
 
 signal animation_finished(card: Control)
 
@@ -13,146 +18,171 @@ const CardScript = preload("res://scripts/NewCard.gd")
 @export var flip_duration: float = 0.8
 @export var move_duration: float = 1.2
 @export var total_frames: int = 8
-@export var rotation_angle: float = 15.0  # Degrees to rotate during flip
-@export var final_scale: Vector2 = Vector2(0.8, 0.8)  # Scale when animation completes
-@export var max_rotation_during_move: float = 10.0  # Max rotation during move to hand
+@export var rotation_angle: float = 15.0
+@export var final_scale: Vector2 = Vector2(0.8, 0.8)
+@export var max_rotation_during_move: float = 10.0
 
-# Card states
+# Motion/easing configuration
+@export var tween_ease: int = Tween.EASE_IN_OUT
+@export var tween_trans: int = Tween.TRANS_CUBIC
+
+# Behavior toggles
+@export var auto_free: bool = true  # Free animator node after animation completes
+@export var use_canvas_layer: bool = false  # Render animation in a CanvasLayer above UI
+
+# Runtime state
 var animating_card: Control
 var start_position: Vector2
 var target_position: Vector2
 var target_rotation: float = 0.0
 var target_scale: Vector2 = Vector2.ONE
-var start_scale: Vector2 = Vector2.ONE  # Store the starting scale for flip animation
+var start_scale: Vector2 = Vector2.ONE
+var suppress_reveal: bool = false
 
-# Animation state
 var current_frame: int = 0
 var is_animating: bool = false
 var flip_tween: Tween
 var move_tween: Tween
 
-func _ready():
-	pass  # No setup needed
+func _ready() -> void:
+	pass
 
-# Start the card draw animation
-func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vector2, final_rotation: float = 0.0, end_scale: Vector2 = Vector2.ONE, from_scale: Vector2 = Vector2.ONE):
+
+func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vector2, final_rotation: float = 0.0, end_scale: Vector2 = Vector2.ONE, from_scale: Vector2 = Vector2.ONE, p_suppress_reveal: bool = false) -> void:
 	if is_animating:
-		print("[CardDrawAnimation] Already animating, ignoring request")
 		return
-	
-	# Store animation parameters
+
+	if debug_logging:
+		print("[Anim] animate_card_draw START -> data:", card_data, " from:", from_pos, " to:", to_pos, " end_scale:", end_scale, " from_scale:", from_scale, " suppress_reveal:", p_suppress_reveal)
+
 	start_position = from_pos
 	target_position = to_pos
 	target_rotation = final_rotation
-	target_scale = end_scale  # Use the parameter instead of default
-	start_scale = from_scale  # Store starting scale for flip animation
-	
-	# Create the card instance
-	animating_card = CardScene.instantiate()
-	add_child(animating_card)
-	
-	# Position card at starting location
-	animating_card.position = start_position
+	target_scale = end_scale
+	start_scale = from_scale
+
+	animating_card = CardScene.instantiate() as Control
+
+	# Parent under a CanvasLayer optionally so animation is always on top
+	if use_canvas_layer and get_parent():
+		var layer = CanvasLayer.new()
+		layer.name = "CardDrawLayer"
+		get_parent().add_child(layer)
+		layer.add_child(animating_card)
+	else:
+		add_child(animating_card)
+
+	# Use global_position so motion is consistent regardless of parent
+	animating_card.global_position = start_position
 	animating_card.rotation_degrees = 0
-	# Start with the starting scale, not the target scale
 	animating_card.scale = start_scale
-	# No z_index needed with CanvasLayer approach
-	print("[CardDrawAnimation] Card starting at scale: ", start_scale, " will animate to: ", target_scale)
-	
-	# Initially show card back (will flip to reveal the actual card)
+
+	# Initially show card back, then flip to reveal actual data
 	var card_back_data = load("res://scripts/resources/CardBack.tres")
 	animating_card.call_deferred("display", card_back_data)
-	
-	# Start the animation sequence
+
+	# Honor caller's request to keep the back visible (useful for opponent slots)
+	suppress_reveal = p_suppress_reveal
+
 	is_animating = true
 	current_frame = 0
+	# Begin flip+move
+	if debug_logging:
+		print("[Anim] starting flip animation (flip_duration=", flip_duration, ", move_duration=", move_duration, ")")
 	_start_flip_animation(card_data)
 
-# Start the flip portion of the animation
-func _start_flip_animation(reveal_data: CustomCardData):
-	# Create flip tween
+
+func _start_flip_animation(reveal_data: CustomCardData) -> void:
 	flip_tween = create_tween()
-	flip_tween.set_parallel(true)  # Allow multiple properties to animate
-	
-	# Animate the flip effect AND scaling together using the full animation duration
+	flip_tween.set_parallel(true)
+
+	if debug_logging:
+		print("[Anim] _start_flip_animation scheduled reveal_data:", reveal_data)
+
 	var total_duration = flip_duration + move_duration
 	flip_tween.tween_method(_update_flip_frame, 0.0, 1.0, total_duration)
-	flip_tween.tween_callback(_on_flip_complete.bind(reveal_data)).set_delay(flip_duration * 0.5)  # Switch card data halfway through flip
-	
-	# Start moving to target position immediately (during flip)
-	flip_tween.tween_property(animating_card, "position", target_position, total_duration)
-	
-	# Rotation happens in two phases: flip wobble, then final rotation
+	flip_tween.tween_callback(_on_flip_complete.bind(reveal_data)).set_delay(flip_duration * 0.5)
+
+	# Animate global_position to avoid parent transform issues
+	flip_tween.tween_property(animating_card, "global_position", target_position, total_duration)
+
 	flip_tween.tween_property(animating_card, "rotation_degrees", rotation_angle, flip_duration * 0.5)
 	flip_tween.tween_property(animating_card, "rotation_degrees", target_rotation, flip_duration * 0.5 + move_duration).set_delay(flip_duration * 0.5)
-	
-	# Set easing for smooth motion - use EASE_IN_OUT for smoother arrival
-	flip_tween.set_ease(Tween.EASE_IN_OUT)
-	flip_tween.set_trans(Tween.TRANS_CUBIC)  # Smoother than TRANS_QUART
-	
-	# Complete animation
+
+	flip_tween.set_ease(tween_ease)
+	flip_tween.set_trans(tween_trans)
+
 	flip_tween.tween_callback(_on_animation_complete).set_delay(total_duration)
 
-# Update the flip animation frame
-func _update_flip_frame(progress: float):
+
+func _update_flip_frame(progress: float) -> void:
 	if not animating_card:
 		return
-	
-	# progress is now 0-1 for the entire animation duration
-	# Calculate what portion of this should be the flip effect
+
 	var total_duration = flip_duration + move_duration
-	var flip_portion = flip_duration / total_duration  # e.g., 0.4 if flip is 0.8s and total is 2.0s
-	
-	# Interpolate the base scale from start to target throughout the entire animation
+	var flip_portion = flip_duration / total_duration
+
 	var current_base_scale = start_scale.lerp(target_scale, progress)
-	
-	# Create flip effect only during the first portion of the animation
+
 	var flip_scale_factor: float
 	if progress < flip_portion:
-		# We're in the flip phase - scale the flip progress to 0-1
 		var flip_progress = progress / flip_portion
 		if flip_progress < 0.5:
-			# First half of flip: scale down from current base scale to 0
 			flip_scale_factor = (1.0 - (flip_progress * 2.0)) * current_base_scale.x
 		else:
-			# Second half of flip: scale up from 0 to current base scale
 			flip_scale_factor = ((flip_progress - 0.5) * 2.0) * current_base_scale.x
 	else:
-		# We're past the flip phase - use normal scaling
 		flip_scale_factor = current_base_scale.x
-		
-	# Apply the scaling
+
 	animating_card.scale.x = flip_scale_factor
 	animating_card.scale.y = current_base_scale.y
-	
-	# Halfway through the FLIP portion (not total animation), switch to the revealed card
+
 	var flip_halfway = flip_portion * 0.5
 	if progress >= flip_halfway and current_frame < 4:
 		current_frame = 4
 
-# Called when flip animation completes (halfway through total animation)
-func _on_flip_complete(reveal_data: CustomCardData):
-	print("[CardDrawAnimation] Flip complete, switching to card data")
+
+func _on_flip_complete(reveal_data: CustomCardData) -> void:
 	if animating_card:
-		# Switch to the actual card data
-		animating_card.call_deferred("display", reveal_data)
+		if debug_logging:
+			print("[Anim] _on_flip_complete called; suppress_reveal=", suppress_reveal, " reveal_data=", reveal_data)
+		# Only reveal the face if we weren't asked to suppress it.
+		if not suppress_reveal:
+			if debug_logging:
+				print("[Anim] Revealing face via display()")
+			animating_card.call_deferred("display", reveal_data)
+		else:
+			if debug_logging:
+				print("[Anim] Suppressed reveal; keeping back visible")
 
-# Called when entire animation sequence completes
-func _on_animation_complete():
+
+func _on_animation_complete() -> void:
 	is_animating = false
-	emit_signal("animation_finished", animating_card)
-	
-	# Don't remove the card - let the GameManager handle it
-	# The card should stay visible at its final position
 
-# Clean up tweens
-func _exit_tree():
+	# Reparent the card to the animator's parent so it survives animator deletion.
+	var card_ref = animating_card
+	var parent_node = get_parent()
+	if card_ref and parent_node and card_ref.get_parent() != parent_node:
+		var gp = card_ref.global_position
+		card_ref.get_parent().remove_child(card_ref)
+		parent_node.add_child(card_ref)
+		card_ref.global_position = gp
+
+	emit_signal("animation_finished", card_ref)
+	if debug_logging:
+		print("[Anim] _on_animation_complete emitted animation_finished for", card_ref)
+
+	if auto_free:
+		call_deferred("queue_free")
+
+
+func _exit_tree() -> void:
 	if flip_tween:
 		flip_tween.kill()
 	if move_tween:
 		move_tween.kill()
 
-# Utility function to create a card draw animation from deck to hand slot
+
 static func create_draw_animation(parent: Node, deck_pos: Vector2, hand_pos: Vector2, card_data: CustomCardData, final_rotation: float = 0.0, end_scale: Vector2 = Vector2.ONE, from_scale: Vector2 = Vector2.ONE) -> CardDrawAnimation:
 	var animator = CardDrawAnimation.new()
 	parent.add_child(animator)

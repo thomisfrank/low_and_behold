@@ -1,44 +1,50 @@
 extends SubViewportContainer
 
+#-----------------------------------------------------------------------------
+# Script configuration
+#-----------------------------------------------------------------------------
 const CardScene = preload("res://scenes/cards.tscn")
-# Use a path instead of direct resource preload
 const DEFAULT_CARD_BACK_PATH = "res://scripts/resources/CardBack.tres"
 
+#-----------------------------------------------------------------------------
+# Node references
+#-----------------------------------------------------------------------------
 @onready var stack_layers: Control = $DeckViewport/DeckControl/StackLayers
 @onready var top_card: Node = $DeckViewport/DeckControl/TopCard
 @onready var count_label: Label = $DeckViewport/DeckControl/CardCount/AspectRatioContainer/CardCountLabel
 
+#-----------------------------------------------------------------------------
+# Exports / configuration
+#-----------------------------------------------------------------------------
 @export var initial_count: int = 48
-@export var stack_offset: int = 60  # Vertical offset between stacked cards
-@export var stack_x_offset: int = 8  # Small horizontal offset for realistic stacking
+@export var stack_offset: int = 60
+@export var stack_x_offset: int = 8
 @export_enum("TwoSwap", "TwoDraw", "FourSwap", "FourDraw", "SixSwap", "SixDraw", "EightSwap", "EightDraw", "TenSwap", "TenDraw", "CardBack") var top_card_key: String = "CardBack"
 
+#-----------------------------------------------------------------------------
+# Internal state
+#-----------------------------------------------------------------------------
 var _count: int = 0
 
 func _ready():
-	print("[Deck] _ready() called - script attached to: ", get_path())
-	
-	# Configure SubViewportContainer for proper input handling
+	print("[Deck] _ready() - ", get_path())
+
+	# SubViewportContainer input config
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	stretch = true  # Make sure container stretches to handle full area
-	
-	# Configure SubViewport for input forwarding
+	stretch = true
 	var subviewport = $DeckViewport
 	if subviewport:
 		subviewport.handle_input_locally = false
-		subviewport.gui_disable_input = false  # Allow input processing
-		print("[Deck] SubViewport configured for input forwarding")
-	
-	print("[Deck] SubViewportContainer input setup complete")
+		subviewport.gui_disable_input = false
 	
 	# Set initial count and update display
 	_count = initial_count
 	_update_count_label()
 	
-	# Clean up any existing stack layers from the scene
+	# Initialize stack layers
 	if stack_layers:
-		stack_layers.z_index = -50  # Ensure stack is behind everything
-		stack_layers.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block mouse input
+		stack_layers.z_index = -50
+		stack_layers.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		for child in stack_layers.get_children():
 			if child:
 				child.queue_free()
@@ -46,77 +52,49 @@ func _ready():
 	# Get the card back resource - always use CardBack for the stack
 	var card_back_data = _load_card_resource("CardBack")
 	
-	# Create three stacked cards with proper z-indexing and offset
+	# Create three stacked placeholder cards
 	for i in range(3):
 		var card = CardScene.instantiate()
 		var layer_name = "StackLayer%d" % (i + 1)
 		card.name = layer_name
-		# Use both horizontal and vertical offset for realistic stacking (like your Figma mock)
 		var offset_pos = Vector2(i * stack_x_offset, i * stack_offset)
-		
-		# Set position directly (scene file now uses position-based layout)
 		card.position = offset_pos
-		
-		# Force position after everything is set up
 		call_deferred("_force_card_position", card, offset_pos)
-		
-		# Set z-index so bottom cards render behind top cards
-		card.z_index = -(i + 1) * 10  # Bottom card has lowest z-index
-		
-		print("[Deck] Creating ", layer_name, " at position: ", offset_pos, " with z_index: ", card.z_index)
-		
-		# Ensure stack cards don't block mouse input (SubViewportContainer structure)
+		card.z_index = -(i + 1) * 10
 		if card is Control:
 			(card as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-			# Also disable input on the SubViewport inside
 			var card_subviewport = card.get_node_or_null("CardsViewport")
 			if card_subviewport and card_subviewport is SubViewport:
 				card_subviewport.gui_disable_input = true
 		stack_layers.add_child(card)
 		card.call_deferred("display", card_back_data)
-		
-		# Debug: Check actual position and size after adding to scene
 		call_deferred("_debug_card_info", card, layer_name)
 	
-	# Set up the top card (draw card)
+	# Top card (draw) setup
 	if top_card:
 		top_card.queue_free()
 	var top = CardScene.instantiate()
 	top.name = "TopCard"
-	top.z_index = 10  # Highest z-index to appear above stack
-	
-	# Set position for top card (scene file now uses position-based layout)
-	top.position = Vector2.ZERO  # Centered
-	
-	# Configure input handling
+	top.z_index = 10
+	top.position = Vector2.ZERO
 	if top is Control:
 		(top as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# Also disable input on the SubViewport inside
 		var top_subviewport = top.get_node_or_null("CardsViewport")
 		if top_subviewport and top_subviewport is SubViewport:
 			top_subviewport.gui_disable_input = true
 	add_child(top)
-	
-	# Use the selected top card from the dropdown
 	var top_card_data = _load_card_resource(top_card_key)
 	top.call_deferred("display", top_card_data)
 	top_card = top
-	
+
 	print("[Deck] Setup complete, top_card_key=", top_card_key)
-	
-	# Debug: Show actual scale information
-	var deck_scale = get_global_transform().get_scale()
-	print("[Deck] Deck global scale: ", deck_scale)
-	print("[Deck] Stack offset (", stack_x_offset, ", ", stack_offset, ") will appear as ~(", stack_x_offset * deck_scale.x, ", ", stack_offset * deck_scale.y, ") pixels on screen")
-	
-	# Connect mouse signals for debugging
-	if not is_connected("mouse_entered", Callable(self, "_on_mouse_entered")):
-		connect("mouse_entered", Callable(self, "_on_mouse_entered"))
-	if not is_connected("mouse_exited", Callable(self, "_on_mouse_exited")):
-		connect("mouse_exited", Callable(self, "_on_mouse_exited"))
 
 signal request_draw
-
+#-----------------------------------------------------------------------------
+# Click-to-draw
+# Left-click inside this control emits `request_draw` which the GameManager
+# listens to in order to start a draw animation.
+#-----------------------------------------------------------------------------
 # Handle input events (SubViewportContainer input forwarding)
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -141,11 +119,7 @@ func _handle_mouse_input(event: InputEvent) -> void:
 			request_draw.emit()
 
 # Add mouse enter/exit for debugging
-func _on_mouse_entered():
-	print("[Deck] Mouse entered deck area")
-
-func _on_mouse_exited():
-	print("[Deck] Mouse exited deck area")
+# (No mouse enter/exit debug handlers)
 
 # Update the count label with current count
 func _update_count_label():

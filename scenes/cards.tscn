@@ -18,11 +18,14 @@ shader_parameter/intensity = 0.3
 shader_parameter/sharpness = 1.5
 
 [node name="cards" type="SubViewportContainer"]
+texture_filter = 1
 custom_minimum_size = Vector2(540, 740)
 script = ExtResource("1_ucp30")
 
 [node name="CardsViewport" type="SubViewport" parent="."]
+transparent_bg = true
 handle_input_locally = false
+canvas_item_default_texture_filter = 0
 size = Vector2i(540, 740)
 render_target_update_mode = 4
 
@@ -31,6 +34,8 @@ custom_minimum_size = Vector2(540, 740)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_ucp30")
 metadata/_edit_vertical_guides_ = [201.0]
 metadata/_edit_horizontal_guides_ = [274.0]
