@@ -1,8 +1,6 @@
 extends Node2D
 
-#-----------------------------------------------------------------------------
-# Script Configuration
-#-----------------------------------------------------------------------------
+## === GameManager: Script Configuration ===
 
 const CardScene = preload("res://scenes/cards.tscn")
 const CardGDScript = preload("res://scripts/NewCard.gd") # Preload for stability
@@ -15,9 +13,7 @@ const CardBackData = preload("res://scripts/resources/CardBack.tres")
 @export var CardScale: Vector2 = Vector2.ONE
 @export var debug_logging: bool = true
 
-#-----------------------------------------------------------------------------
-# Animation Settings
-#-----------------------------------------------------------------------------
+## === GameManager: Animation Settings ===
 
 @export_group("Card Animation")
 @export var card_draw_flip_duration: float = 0.8
@@ -25,18 +21,14 @@ const CardBackData = preload("res://scripts/resources/CardBack.tres")
 @export var card_draw_rotation: float = 15.0
 @export var card_final_scale: Vector2 = Vector2(0.8, 0.8)
 
-#-----------------------------------------------------------------------------
-# Internal State
-#-----------------------------------------------------------------------------
+## === GameManager: Internal State ===
 
 var _hand_index: int = 0
 var _card_layer: CanvasLayer
 var _last_two_cards: Array[Dictionary] = []
 var _current_hand_meta: Array[Dictionary] = []
 
-#-----------------------------------------------------------------------------
-# Engine Hooks
-#-----------------------------------------------------------------------------
+## === GameManager: Engine Hooks ===
 
 func _ready():
 	randomize()
@@ -64,9 +56,7 @@ func _ready():
 	# Deal a quick opponent hand on load (animated, one-by-one)
 	call_deferred("_deal_initial_opponent_hand")
 
-#-----------------------------------------------------------------------------
-# Deck Handling
-#-----------------------------------------------------------------------------
+## === GameManager: Deck Handling ===
 
 # Connects to the Deck's request_draw signal.
 func _connect_to_deck():
@@ -82,48 +72,55 @@ func _connect_to_deck():
 
 # Handles the deck's request to draw a card.
 func _on_deck_request_draw() -> void:
-	if debug_logging:
-		print("[GM] Deck requested draw")
+		if debug_logging:
+			print("[GM] Deck requested draw")
 
-	if _hand_index == 0:
-		_current_hand_meta.clear()
+		if _hand_index == 0:
+			_current_hand_meta.clear()
 
-	var candidates = _get_card_candidates()
-	var chosen_path = _select_smart_card(candidates)
-	var chosen_data = load(chosen_path) as CustomCardData
-	if not chosen_data:
-		push_warning("[GM] Failed to load chosen card: %s" % chosen_path)
-		return
+		var candidates = _get_card_candidates()
+		var chosen_path = _select_smart_card(candidates)
+		var chosen_data = load(chosen_path) as CustomCardData
+		if not chosen_data:
+			push_warning("[GM] Failed to load chosen card: %s" % chosen_path)
+			return
 
-	var chosen_meta = _build_card_meta(chosen_path)
-	_track_drawn_card(chosen_meta)
-	_current_hand_meta.append(chosen_meta)
+		var chosen_meta = _build_card_meta(chosen_path)
+		_track_drawn_card(chosen_meta)
+		_current_hand_meta.append(chosen_meta)
 
-	var player_hand = _scene_root().find_child("PlayerHand", true, false)
-	if not player_hand:
-		push_warning("[GM] PlayerHand node not found; cannot place drawn card")
-		return
+		var player_hand = _scene_root().find_child("PlayerHand", true, false)
+		if not player_hand:
+			push_warning("[GM] PlayerHand node not found; cannot place drawn card")
+			return
 
-	var deck_node = _scene_root().find_child("Deck", true, false)
-	if not deck_node:
-		push_warning("[GM] Deck node not found; cannot animate card draw")
-		return
+		var deck_node = _scene_root().find_child("Deck", true, false)
+		if not deck_node:
+			push_warning("[GM] Deck node not found; cannot animate card draw")
+			return
+	
+		var target_slot = _get_target_slot(player_hand)
+	
+		# --- THIS IS THE NEW LOGIC ---
+		# First, get the target position from the PlayerHand.
+		var target_pos = _get_target_position(player_hand, target_slot)
 
-	var start_pos = deck_node.global_position
-	var target_slot = _get_target_slot(player_hand)
-	if not target_slot:
-		return
+		# Now, check if it's null. If it is, the draw fails here.
+		if target_pos == null:
+			push_error("[GM] Draw failed. PlayerHand reported an invalid target slot. (Hand is likely full)")
+			# We stop the function here so no animation is created.
+			return
+		# --- END OF NEW LOGIC ---
 
-	var target_pos = _get_target_position(player_hand, target_slot)
+		var start_pos = deck_node.global_position
+		var target_rotation = _get_target_rotation(player_hand, target_slot)
 
-	_start_card_animation(chosen_data, start_pos, target_pos, target_slot)
+		_start_card_animation(chosen_data, start_pos, target_pos, target_slot, target_rotation)
 
-	_hand_index += 1
-	_update_deck_count(deck_node)
+		_hand_index += 1
+		_update_deck_count(deck_node)
 
-#-----------------------------------------------------------------------------
-# Card Creation & Animation
-#-----------------------------------------------------------------------------
+## === GameManager: Card Creation & Animation ===
 
 # Creates a new card instance.
 func create_card(data: CustomCardData):
@@ -136,7 +133,7 @@ func create_card(data: CustomCardData):
 		print("[GM] Card instantiated:", new_card.position, new_card.scale)
 
 # Starts the card draw animation.
-func _start_card_animation(data: CustomCardData, start_pos: Vector2, target_pos: Vector2, target_slot: Node, p_final_scale: Variant = null, p_start_scale: Variant = null) -> void:
+func _start_card_animation(data: CustomCardData, start_pos: Vector2, target_pos: Vector2, target_slot: Node, final_rotation: float = 0.0, p_final_scale: Variant = null, p_start_scale: Variant = null) -> void:
 	var animator = CardDrawAnimation.new()
 	_card_layer.add_child(animator)
 
@@ -171,81 +168,32 @@ func _start_card_animation(data: CustomCardData, start_pos: Vector2, target_pos:
 		suppress_reveal_flag = true
 		if debug_logging:
 			print("[GM] Detected opponent slot; suppressing reveal for:", slot_path)
-	animator.animate_card_draw(data, start_pos, target_pos, 0.0, animator.final_scale, start_scale, suppress_reveal_flag)
+	animator.animate_card_draw(data, start_pos, target_pos, final_rotation, animator.final_scale, start_scale, suppress_reveal_flag)
 	if debug_logging:
 		print("[GM] Started draw", start_pos, "->", target_pos, " final_scale=", animator.final_scale, " start_scale=", start_scale)
 
 # Called when the card draw animation finishes.
 func _on_card_animation_finished(animated_card: Control, _drawn_card_data: CustomCardData, _target_slot: Node) -> void:
-	# animated_card is the temporary flying visual created by CardDrawAnimation
-	# Quick unconditional debug print to ensure this handler runs in all builds
-	print("[GM] _on_card_animation_finished called -> animated_card:", animated_card, " drawn:", _drawn_card_data, " target_slot:", _target_slot)
-	if not _drawn_card_data:
-		return
-
+	# --- OPPONENT LOGIC (No changes here) ---
 	var is_opp_slot = _is_slot_in_opponent_hand(_target_slot)
-	# always log slot detection result for debugging
-	if _target_slot:
-		print("[GM] slot detection: is_opp_slot=", is_opp_slot, " slot_path=", _target_slot.get_path())
-	else:
-		print("[GM] slot detection: target_slot is null")
-
 	if is_opp_slot and is_instance_valid(_target_slot):
-		# Store the real card data on the slot for game logic.
 		_target_slot.set_meta("hidden_card_data", _drawn_card_data)
-
-		# The HandSlot nodes are already instances of the card scene and
-		# implement `display()`. Call display() on the slot itself with the
-		# CardBack resource so we don't remove the slot internals.
 		if _target_slot.has_method("display"):
 			_target_slot.call_deferred("display", CardBackData)
-		else:
-			# As a last resort, try to find a descendant with display() (rare)
-			var desc = null
-			for c in _target_slot.get_children():
-				if c and c.has_method and c.has_method("display"):
-					desc = c
-					break
-			if desc:
-				desc.call_deferred("display", CardBackData)
-
-		# Ensure the slot is visible and free the animated flying card.
 		if _target_slot is CanvasItem:
 			_target_slot.visible = true
-
 		if animated_card and animated_card.is_inside_tree():
 			animated_card.queue_free()
-
-		if debug_logging:
-			print("[GM] Opponent slot '", _target_slot.name, "' populated with CardBack (via display()).")
 		return
 
-	# Player (or non-opponent) slot behavior: keep animated card visible and set z
-	if animated_card:
-		animated_card.visible = true
-		if _target_slot:
-			var slot_index = _get_slot_index(_target_slot.name) if _target_slot and _target_slot.name else -1
-			if slot_index >= 0:
-				animated_card.z_index = 3 - slot_index
-				if debug_logging:
-					print("[GM] Placed in", _target_slot.name, "z=", animated_card.z_index)
-
-	if debug_logging:
-		print("[GM] Animation finished for", _drawn_card_data)
-
-
-	# Player (or non-opponent) slot behavior: keep animated card visible and set z
-	if animated_card:
-		animated_card.visible = true
-		if _target_slot:
-			var slot_index = _get_slot_index(_target_slot.name) if _target_slot and _target_slot.name else -1
-			if slot_index >= 0:
-				animated_card.z_index = 3 - slot_index
-				if debug_logging:
-					print("[GM] Placed in", _target_slot.name, "z=", animated_card.z_index)
-
-	if debug_logging:
-		print("[GM] Animation finished for", _drawn_card_data)
+	# --- PLAYER HAND LOGIC (This is the updated part) ---
+	if animated_card and _target_slot:
+		var player_hand = _scene_root().find_child("PlayerHand", true, false)
+		if player_hand:
+			# Get the index of the slot (e.g., "HandSlot3" -> 2)
+			var slot_index = _get_slot_index(_target_slot.name)
+			# "Hand over" the animated card node to the PlayerHand to manage
+			player_hand.call_deferred("receive_card_node", animated_card, slot_index, _drawn_card_data)
 
 func _is_slot_in_opponent_hand(slot: Node) -> bool:
 	if not slot:
@@ -270,9 +218,7 @@ func _is_slot_in_opponent_hand(slot: Node) -> bool:
 
 	return false
 
-#-----------------------------------------------------------------------------
-# UI & Initialization Helpers
-#-----------------------------------------------------------------------------
+## === GameManager: UI & Initialization Helpers ===
 
 # Hides placeholder cards in the player's hand.
 func _hide_placeholders():
@@ -297,9 +243,7 @@ func _configure_score_panels():
 	if opponent_instance and opponent_instance.has_node("PlayerScore"):
 		opponent_instance.get_node("PlayerScore").visible = false
 
-#-----------------------------------------------------------------------------
-# Card Selection Logic
-#-----------------------------------------------------------------------------
+## === GameManager: Card Selection Logic ===
 
 # Selects a card from the candidates using a smart algorithm to avoid repetition.
 func _select_smart_card(candidates: Array[String]) -> String:
@@ -355,9 +299,7 @@ func _track_drawn_card(card_meta: Dictionary) -> void:
 	if _last_two_cards.size() > 2:
 		_last_two_cards.pop_front()
 
-#-----------------------------------------------------------------------------
-# Utility Functions
-#-----------------------------------------------------------------------------
+## === GameManager: Utility Functions ===
 
 # Recursively finds the Deck node in the scene.
 func _find_deck_recursive(node: Node) -> Node:
@@ -388,9 +330,7 @@ func _get_card_candidates() -> Array[String]:
 		"res://scripts/resources/TenDraw.tres", "res://scripts/resources/TenSwap.tres"
 	]
 
-# -----------------------------------------------------------------------------
-# Opponent startup quick-draw helpers
-# -----------------------------------------------------------------------------
+## === GameManager: Opponent Startup ===
 func _deal_initial_opponent_hand() -> void:
 	var opp_hand = _scene_root().find_child("OppHand", true, false)
 	if not opp_hand:
@@ -488,7 +428,7 @@ func _deal_initial_opponent_hand() -> void:
 					slot_final_scale = s
 
 		# start animation targeting the actual slot node, pass final scale so the animator matches the slot
-		_start_card_animation(chosen_data, start_pos, target_pos, target_slot, slot_final_scale, CardScale)
+		_start_card_animation(chosen_data, start_pos, target_pos, target_slot, 0.0, slot_final_scale, CardScale)
 
 		# slight pause between draws so animations stagger (yield)
 		await get_tree().create_timer(0.06).timeout
@@ -516,10 +456,21 @@ func _get_target_slot(player_hand: Node) -> Node:
 	return null
 
 # Gets the target position for the card in the hand.
-func _get_target_position(player_hand: Node, target_slot: Node) -> Vector2:
-	if player_hand.has_method("get_slot_position"):
-		return player_hand.get_slot_position(_hand_index)
-	return target_slot.global_position
+func _get_target_position(player_hand: Node, _target_slot: Node) -> Vector2:
+		if player_hand.has_method("get_slot_position"):
+			return player_hand.get_slot_position(_hand_index)
+		push_warning("[GM] PlayerHand node is missing the 'get_slot_position' method. Returning Vector2.ZERO.")
+		return Vector2.ZERO
+
+# Gets the target rotation for the card in the hand.
+func _get_target_rotation(player_hand: Node, target_slot: Node) -> float:
+	if target_slot and target_slot.has_method("get_rotation"):
+		return target_slot.get_rotation()
+	elif player_hand.has_method("get_slot_rotation"):
+		# Fallback: use PlayerHand's slot rotation method
+		return player_hand.get_slot_rotation(_hand_index)
+	push_warning("[GM] Could not get rotation from target_slot or PlayerHand. Returning 0.0.")
+	return 0.0
 
 # Updates the visual count of the deck.
 func _update_deck_count(deck_node: Node):
