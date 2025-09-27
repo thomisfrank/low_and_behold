@@ -30,7 +30,7 @@ func _ready():
 	print("[Deck] _ready() - ", get_path())
 
 	# SubViewportContainer input config
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	stretch = true
 	var subviewport = $DeckViewport
 	if subviewport:
@@ -104,7 +104,6 @@ func _input(event: InputEvent) -> void:
 		if rect.has_point(mouse_pos):
 			print("[Deck] _input received mouse event within bounds: ", event)
 			_handle_mouse_input(event)
-			get_viewport().set_input_as_handled()
 
 func _gui_input(event: InputEvent) -> void:
 	print("[Deck] _gui_input called with event: ", event)

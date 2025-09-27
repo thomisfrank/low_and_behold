@@ -1,6 +1,7 @@
-[gd_scene load_steps=9 format=3 uid="uid://b4h2dmijcovco"]
+[gd_scene load_steps=11 format=3 uid="uid://b4h2dmijcovco"]
 
 [ext_resource type="Texture2D" uid="uid://ds4blade07koo" path="res://assets/UI/InfoBox.png" id="1_vf55b"]
+[ext_resource type="Script" uid="uid://c8g1jwe7mutt7" path="res://scenes/detail_box.gd" id="1_ybtrl"]
 [ext_resource type="Texture2D" uid="uid://ppvrxj4j4yfh" path="res://assets/UI/Button01.png" id="2_bynor"]
 [ext_resource type="Texture2D" uid="uid://btoets62xjq0h" path="res://assets/UI/Button03.png" id="3_ogne6"]
 [ext_resource type="Texture2D" uid="uid://cvstb6gofxt0j" path="res://assets/UI/Button02.png" id="4_3bwdu"]
@@ -11,6 +12,8 @@
 font = ExtResource("6_bynor")
 font_size = 22
 font_color = Color(0.17254902, 0.24313726, 0.3137255, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o6niq"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_ogne6"]
 line_spacing = -8.0
@@ -25,6 +28,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_ybtrl")
 
 [node name="Box" type="TextureRect" parent="."]
 texture_filter = 1
@@ -74,6 +78,7 @@ stretch_mode = 0
 
 [node name="CardDescription" type="Label" parent="Box"]
 texture_filter = 1
+material = SubResource("ShaderMaterial_o6niq")
 layout_mode = 0
 offset_left = 25.0
 offset_top = 25.0

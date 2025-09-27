@@ -23,24 +23,6 @@ func _ready() -> void:
 		else:
 			push_warning("ScorePanel: attached %d ScoreTracker labels" % trackers.size())
 
-		# Debug: list the exact ScoreTracker label paths and any TextureRect named "Fill"
-		var tracker_paths: Array = []
-		for t in trackers:
-			if t:
-				tracker_paths.append(t.get_path())
-		push_warning("ScorePanel: trackers -> %s" % tracker_paths)
-
-		var found_fills: Array = []
-		var q: Array = [self]
-		while q.size() > 0:
-			var n = q.pop_front()
-			for c in n.get_children():
-				if c is TextureRect and c.name == "Fill":
-					found_fills.append(c.get_path())
-				if c.get_child_count() > 0:
-					q.append(c)
-		push_warning("ScorePanel: Fill nodes -> %s" % found_fills)
-
 	# set any TextureRect named "Fill" to the exported visibility
 	var queue: Array = [self]
 	while queue.size() > 0:

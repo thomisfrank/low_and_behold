@@ -87,3 +87,4 @@ offset_left = 51.0
 offset_top = 1.0
 offset_right = 51.0
 offset_bottom = 1.0
+slot_positions = Array[Vector2]([Vector2(688, 835), Vector2(805, 840), Vector2(912, 830), Vector2(1019, 835)])
