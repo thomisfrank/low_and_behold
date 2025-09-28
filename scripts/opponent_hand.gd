@@ -1,26 +1,37 @@
+
+# =====================================
+# opponent_hand.gd
+# Manages opponent hand, slot layout, and swap selection
+# =====================================
 extends Control
 
-# Minimal OpponentHand
-# - Mirrors PlayerHand layout/slot API but without hover/tooltips
-# - Adds real card instances to slots but forces their visual to show the back
-
+# Layout configuration
 @export_group("Hand Layout")
-@export var slot_positions: Array[Vector2] = [
-	Vector2(688, 835),
-	Vector2(805, 840),
-	Vector2(912, 830),
-	Vector2(1019, 835)
-]
+@export var slot_positions: Array[Vector2] = [Vector2(688, 835), Vector2(805, 840), Vector2(912, 830), Vector2(1019, 835)]
 @export var slot_rotations: Array[float] = [0.0, 0.0, 0.0, 0.0]
 @export var slot_scales: Array[Vector2] = [Vector2(0.32, 0.32), Vector2(0.32, 0.32), Vector2(0.32, 0.32), Vector2(0.32, 0.32)]
-
 @export_group("Hand Behavior")
 @export var max_cards: int = 4
 @export var auto_arrange: bool = true
 @export var debug_layout: bool = false
 
+# Internal state
 var hand_slots: Array[Node] = []
 var _processed_slots: Array = []
+
+# Swap selection state
+var swap_enabled: bool = false
+var swap_selected_index: int = -1
+signal swap_card_selected(index)
+
+# Remove all cards from hand (for round discard)
+func discard_all_cards():
+	for slot in hand_slots:
+		if slot and slot.visible:
+			slot.visible = false
+			if slot.has_method("display"):
+				var empty_data = load("res://scripts/resources/CardBack.tres")
+				slot.call_deferred("display", empty_data)
 
 func _ready():
 	mouse_filter = Control.MOUSE_FILTER_PASS
@@ -45,6 +56,8 @@ func _ready():
 	clear_hand()
 
 	call_deferred("apply_slot_layout")
+
+	set_process_input(true)
 
 # Layout helpers
 func _calculate_centered_positions():
@@ -103,6 +116,11 @@ func get_card_count() -> int:
 			count += 1
 	return count
 
+func get_card_node(index: int) -> Node:
+	if index >= 0 and index < hand_slots.size():
+		return hand_slots[index]
+	return null
+
 func clear_hand():
 	for slot in hand_slots:
 		if slot:
@@ -113,6 +131,15 @@ func clear_hand():
 					print("[OppHand] clear_hand: calling display(CardBack) on", slot)
 				slot.call_deferred("display", empty_data)
 
+func discard_card(index: int):
+	var slot = get_slot(index)
+	if slot and slot.visible:
+		slot.visible = false
+		if slot.has_method("display"):
+			var empty_data = load("res://scripts/resources/CardBack.tres")
+			slot.call_deferred("display", empty_data)
+
+# Add a real card to the next available slot, but force the visual back
 # Add a real card to the next available slot, but force the visual back
 func add_card_to_hand(card_data: CustomCardData) -> bool:
 	var empty_slot = get_next_empty_slot()
@@ -126,6 +153,53 @@ func add_card_to_hand(card_data: CustomCardData) -> bool:
 			call_deferred("_force_show_back_on", empty_slot)
 			return true
 	return false
+
+# === Swap Selection Logic ===
+func enable_swap_selection():
+	swap_enabled = true
+	swap_selected_index = -1
+	print("[OppHand] Swap selection enabled. Hover and double-click to select a card.")
+
+func disable_swap_selection():
+	swap_enabled = false
+	swap_selected_index = -1
+	print("[OppHand] Swap selection disabled.")
+
+func _input(event):
+	if not swap_enabled:
+		return
+	if event is InputEventMouseMotion:
+		var mouse_pos = get_global_mouse_position()
+		for i in range(hand_slots.size()):
+			var slot = hand_slots[i]
+			if slot and slot.visible and slot is Control:
+				var rect = slot.get_global_rect()
+				if rect.has_point(mouse_pos):
+					# Highlight hovered slot
+					slot.modulate = Color(1, 1, 0.7, 1) # yellow highlight
+				else:
+					slot.modulate = Color(1, 1, 1, 1)
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
+			var mouse_pos = get_global_mouse_position()
+			for i in range(hand_slots.size()):
+				var slot = hand_slots[i]
+				if slot and slot.visible and slot is Control:
+					var rect = slot.get_global_rect()
+					if rect.has_point(mouse_pos):
+						swap_selected_index = i
+						print("[OppHand] Swap card selected at index", i)
+						_reveal_card(i)
+						emit_signal("swap_card_selected", i)
+						disable_swap_selection()
+						break
+
+func _reveal_card(index: int):
+	var slot = get_slot(index)
+	if slot and slot.has_method("display"):
+		# TODO: Animate flip, for now just show face
+		slot.call_deferred("display", slot.get_meta("hidden_card_data"))
+		slot.modulate = Color(1, 1, 1, 1)
 
 func _force_show_back_on(slot: Node) -> void:
 	if not slot:

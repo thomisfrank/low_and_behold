@@ -1,13 +1,34 @@
-[gd_scene load_steps=9 format=3 uid="uid://co3eb35qopnf1"]
+[gd_scene load_steps=19 format=3 uid="uid://co3eb35qopnf1"]
 
 [ext_resource type="PackedScene" uid="uid://wbqyylucvb6b" path="res://scenes/backgrounds.tscn" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://bbk834gewqfrh" path="res://scripts/GameManager.gd" id="1_sugp2"]
+[ext_resource type="Shader" uid="uid://3l40v8n07t2y" path="res://scripts/shaders/post.gdshader" id="1_ya4ey"]
 [ext_resource type="PackedScene" uid="uid://d2pypsgvojf3o" path="res://scenes/deck.tscn" id="4_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://lb3wfdukkw5e" path="res://scenes/player_hand.tscn" id="4_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://cikg76322k06p" path="res://scenes/score_panel.tscn" id="5_tbgi4"]
+[ext_resource type="PackedScene" uid="uid://dfxed4agrvush" path="res://scenes/play_area.tscn" id="6_85g3d"]
 [ext_resource type="PackedScene" uid="uid://dhvcbgkt88duf" path="res://scenes/round_counter.tscn" id="6_tefeu"]
+[ext_resource type="PackedScene" uid="uid://durgvndden1pf" path="res://scenes/game_state_overlay.tscn" id="7_eb6dy"]
 [ext_resource type="PackedScene" uid="uid://b4h2dmijcovco" path="res://scenes/detail_box.tscn" id="7_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://bo2bpjjk4sie3" path="res://scenes/settings.tscn" id="8_a8y0u"]
+[ext_resource type="PackedScene" uid="uid://b63ci0rm6m6op" path="res://scenes/SettingsPanel.tscn" id="8_jkv2x"]
 [ext_resource type="PackedScene" uid="uid://d2xo53nv87pnp" path="res://scenes/opponent_hand.tscn" id="8_tipki"]
+[ext_resource type="PackedScene" uid="uid://d0tsha6hj6nd2" path="res://scenes/surrender.tscn" id="8_trceg"]
+[ext_resource type="PackedScene" uid="uid://c28gtgbys4mdo" path="res://scenes/discard_pile.tscn" id="10_choun"]
+[ext_resource type="Texture2D" uid="uid://qqxpeb161ekh" path="res://assets/UI/Options.png" id="16_jbj1t"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ya4ey"]
+shader = ExtResource("1_ya4ey")
+shader_parameter/pixel_size = 2.0
+shader_parameter/scanline_darkness = 0.134000006365
+shader_parameter/scanline_spacing = 2.918000091105
+shader_parameter/curvature_amount = 0.1330000063175
+shader_parameter/aberration_amount = 0.01
+shader_parameter/noise_amount = 0.150000007125
+shader_parameter/overlay_strength = 0.1350000064125
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_eb6dy"]
+viewport_path = NodePath("SubViewport")
 
 [node name="main" type="Node2D"]
 script = ExtResource("1_sugp2")
@@ -15,65 +36,158 @@ card_data_path = "uid://b32vnfrr06ful"
 card_key = "TwoSwap"
 CardPosition = Vector2(960, 540)
 CardScale = Vector2(0.5, 0.5)
+first_player = 1
+overlay_duration = 1.5
 card_draw_flip_duration = 0.2
 card_draw_move_duration = 0.2
 card_draw_rotation = 0.8
 
-[node name="UILayer" type="CanvasLayer" parent="."]
+[node name="SubViewport" type="SubViewport" parent="."]
+transparent_bg = true
+canvas_item_default_texture_filter = 0
+size = Vector2i(1920, 1080)
+render_target_update_mode = 4
+
+[node name="UILayer" type="CanvasLayer" parent="SubViewport"]
 layer = -50
 
-[node name="backgrounds" parent="UILayer" instance=ExtResource("1_o5qli")]
+[node name="ColorRect" type="ColorRect" parent="SubViewport/UILayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
 
-[node name="PlayerScore" parent="UILayer" instance=ExtResource("5_tbgi4")]
+[node name="backgrounds" parent="SubViewport/UILayer" instance=ExtResource("1_o5qli")]
+metadata/_edit_use_anchors_ = true
+
+[node name="PlayerScore" parent="SubViewport/UILayer" instance=ExtResource("5_tbgi4")]
 offset_left = 75.0
 offset_top = 849.0
 offset_right = 75.0
 offset_bottom = 849.0
 debug = false
+metadata/_edit_use_anchors_ = true
 
-[node name="OppScore" parent="UILayer" instance=ExtResource("5_tbgi4")]
+[node name="OppScore" parent="SubViewport/UILayer" instance=ExtResource("5_tbgi4")]
 unique_name_in_owner = true
 offset_left = 68.0
 offset_top = 124.0
 offset_right = 68.0
 offset_bottom = 124.0
+metadata/_edit_use_anchors_ = true
 
-[node name="RoundCounter" parent="UILayer" instance=ExtResource("6_tefeu")]
+[node name="RoundCounter" parent="SubViewport/UILayer" instance=ExtResource("6_tefeu")]
 offset_left = 1634.0
-offset_top = 492.0
+offset_top = 100.0
 offset_right = 1634.0
-offset_bottom = 492.0
+offset_bottom = 100.0
 round_count = 1
+metadata/_edit_use_anchors_ = true
 
-[node name="detail_box" parent="UILayer" instance=ExtResource("7_o6xl0")]
+[node name="detail_box" parent="SubViewport/UILayer" instance=ExtResource("7_o6xl0")]
 visible = false
+z_index = 100
 material = null
-box_offset = Vector2(-220, -220)
+custom_minimum_size = Vector2(380, 380)
+jitter_duration = 0.25
+jitter_amount = 20.0
+box_size = Vector2(380, 380)
+box_offset = Vector2(-68, -640)
 
-[node name="GameLayer" type="Node2D" parent="."]
+[node name="PlayArea" parent="SubViewport/UILayer" instance=ExtResource("6_85g3d")]
+visible = false
 
-[node name="Deck" parent="GameLayer" instance=ExtResource("4_jyhfs")]
+[node name="OptionsButton" type="TextureButton" parent="SubViewport/UILayer"]
+offset_left = 1759.0
+offset_top = 881.0
+offset_right = 1885.0
+offset_bottom = 1007.0
+scale = Vector2(0.52, 0.52)
+texture_normal = ExtResource("16_jbj1t")
+texture_pressed = ExtResource("16_jbj1t")
+texture_hover = ExtResource("16_jbj1t")
+
+[node name="SurrenderButton" parent="SubViewport/UILayer" instance=ExtResource("8_trceg")]
+visible = false
+custom_minimum_size = Vector2(0, 0)
+offset_left = 1666.0
+offset_top = 833.0
+offset_right = 1867.0
+offset_bottom = 887.0
+
+[node name="SettingsButton" parent="SubViewport/UILayer" instance=ExtResource("8_a8y0u")]
+visible = false
+offset_left = 1671.9999
+offset_top = 906.0
+offset_right = 1872.9999
+offset_bottom = 960.0
+
+[node name="Settings Panel" parent="SubViewport/UILayer" instance=ExtResource("8_jkv2x")]
+visible = false
+offset_left = 1629.0
+offset_top = 712.0
+offset_right = 1629.0
+offset_bottom = 712.0
+scale = Vector2(0.2400003, 0.2400003)
+
+[node name="GameStateOverlay" parent="SubViewport/UILayer" instance=ExtResource("7_eb6dy")]
+visible = false
+
+[node name="GameLayer" type="Node2D" parent="SubViewport"]
+
+[node name="Deck" parent="SubViewport/GameLayer" instance=ExtResource("4_jyhfs")]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 863.0
+offset_left = 799.0
 offset_top = 395.0
-offset_right = 1916.5713
+offset_right = 1852.5713
 offset_bottom = 1475.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.42000002, 0.42000002)
+metadata/_edit_use_anchors_ = true
 
-[node name="PlayerHand" parent="GameLayer" instance=ExtResource("4_tbgi4")]
+[node name="PlayerHand" parent="SubViewport/GameLayer" instance=ExtResource("4_tbgi4")]
 slot_positions = Array[Vector2]([Vector2(600, 840), Vector2(740, 820), Vector2(880, 795), Vector2(1032, 795)])
 slot_scales = Array[Vector2]([Vector2(0.5, 0.5), Vector2(0.5, 0.5), Vector2(0.5, 0.5), Vector2(0.5, 0.5)])
-hover_scale = 1.4
+hover_scale = 1.2
 hover_position_offset = Vector2(-200, -300)
+metadata/_edit_use_anchors_ = true
 
-[node name="opponent_hand" parent="GameLayer" instance=ExtResource("8_tipki")]
+[node name="opponent_hand" parent="SubViewport/GameLayer" instance=ExtResource("8_tipki")]
 offset_left = 51.0
 offset_top = 1.0
 offset_right = 51.0
 offset_bottom = 1.0
+metadata/_edit_use_anchors_ = true
+
+[node name="DiscardPile" parent="SubViewport/GameLayer" instance=ExtResource("10_choun")]
+visible = false
+offset_left = 1609.9999
+offset_top = 740.99994
+offset_right = 1609.9999
+offset_bottom = 740.99994
+scale = Vector2(0.88, 0.88)
+
+[node name="TextureRect" type="TextureRect" parent="."]
+modulate = Color(1, 1, 1, 0.7)
+texture_filter = 1
+material = SubResource("ShaderMaterial_ya4ey")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = 5.0
+offset_right = 1924.0
+offset_bottom = 1085.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("ViewportTexture_eb6dy")
+metadata/_edit_lock_ = true

@@ -1,0 +1,171 @@
+[gd_scene load_steps=21 format=3 uid="uid://b63ci0rm6m6op"]
+
+[ext_resource type="Shader" uid="uid://u4c18necgjr2" path="res://scripts/shaders/digitize.gdshader" id="1_sdcb2"]
+[ext_resource type="Script" uid="uid://bfoshuxmk7uo7" path="res://scripts/detail_box.gd" id="2_2drfb"]
+[ext_resource type="Texture2D" uid="uid://ds4blade07koo" path="res://assets/UI/InfoBox.png" id="3_ivayj"]
+[ext_resource type="Texture2D" uid="uid://glwo7khgjncb" path="res://assets/UI/Grabber.png" id="4_ivayj"]
+[ext_resource type="Shader" uid="uid://dvp6owddsdn58" path="res://scripts/shaders/TextJitter.gdshader" id="4_q4opi"]
+[ext_resource type="Texture2D" uid="uid://bufwrkv6wfu5i" path="res://assets/UI/GrabberHighlight.png" id="5_q4opi"]
+[ext_resource type="FontFile" uid="uid://i4xek7v21bic" path="res://assets/fonts/PixelifySans-VariableFont_wght.ttf" id="5_x0d64"]
+[ext_resource type="Texture2D" uid="uid://cc5t5vl53efyx" path="res://assets/UI/SliderFrame.png" id="6_x0d64"]
+[ext_resource type="Texture2D" uid="uid://cljwfetjc4qla" path="res://assets/UI/SliderFill.png" id="7_10hye"]
+[ext_resource type="Texture2D" uid="uid://drb46xaxt6nxa" path="res://assets/UI/CheckBoxEmpty.png" id="9_am76v"]
+[ext_resource type="Texture2D" uid="uid://cwygslwn35ul4" path="res://assets/UI/CheckBoxFilled.png" id="10_uncnm"]
+[ext_resource type="Texture2D" uid="uid://xaamvhmwjrnm" path="res://assets/UI/Check.png" id="11_2vxd0"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o6niq"]
+shader = ExtResource("1_sdcb2")
+shader_parameter/jitter_amount = 2.0
+shader_parameter/jitter_rate = 8.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uncnm"]
+shader = ExtResource("4_q4opi")
+shader_parameter/jitter_rate = 4.50000016625
+shader_parameter/jitter_amount = 0.003
+
+[sub_resource type="LabelSettings" id="LabelSettings_43aec"]
+font = ExtResource("5_x0d64")
+font_size = 60
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_am76v"]
+texture = ExtResource("6_x0d64")
+texture_margin_left = 829.0
+texture_margin_top = 63.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_uncnm"]
+texture = ExtResource("7_10hye")
+texture_margin_left = 238.0
+texture_margin_right = 44.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pdkyi"]
+bg_color = Color(0.9254902, 0.9411765, 0.94509804, 0.23137255)
+
+[sub_resource type="LabelSettings" id="LabelSettings_vtmsj"]
+font = ExtResource("5_x0d64")
+font_size = 60
+
+[sub_resource type="LabelSettings" id="LabelSettings_acqa2"]
+font = ExtResource("5_x0d64")
+font_size = 50
+
+[node name="Settings Panel" type="Control"]
+material = SubResource("ShaderMaterial_o6niq")
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_2drfb")
+
+[node name="Frame" type="TextureRect" parent="."]
+texture_filter = 1
+layout_mode = 0
+offset_right = 222.0
+offset_bottom = 222.0
+scale = Vector2(4.3698225, 4.8374257)
+texture = ExtResource("3_ivayj")
+expand_mode = 4
+
+[node name="Music" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 55.0
+offset_top = 138.0
+offset_right = 884.0
+offset_bottom = 327.0
+
+[node name="MusicVolume" type="Label" parent="Music"]
+material = SubResource("ShaderMaterial_uncnm")
+layout_mode = 2
+text = "Music Volume"
+label_settings = SubResource("LabelSettings_43aec")
+
+[node name="HSlider" type="HSlider" parent="Music"]
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
+theme_override_icons/grabber = ExtResource("4_ivayj")
+theme_override_icons/grabber_highlight = ExtResource("5_q4opi")
+theme_override_styles/slider = SubResource("StyleBoxTexture_am76v")
+theme_override_styles/grabber_area = SubResource("StyleBoxTexture_uncnm")
+
+[node name="SFX" type="VBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 55.0
+offset_top = 358.0
+offset_right = 884.0
+offset_bottom = 547.0
+
+[node name="SFXVolume" type="Label" parent="SFX"]
+material = SubResource("ShaderMaterial_uncnm")
+layout_mode = 2
+text = "SFX Volume"
+label_settings = SubResource("LabelSettings_43aec")
+
+[node name="HSlider" type="HSlider" parent="SFX"]
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
+theme_override_icons/grabber = ExtResource("4_ivayj")
+theme_override_icons/grabber_highlight = ExtResource("5_q4opi")
+theme_override_styles/slider = SubResource("StyleBoxTexture_am76v")
+theme_override_styles/grabber_area = SubResource("StyleBoxTexture_uncnm")
+
+[node name="Visual Effects" type="Panel" parent="."]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 619.0
+offset_right = 914.0
+offset_bottom = 899.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_pdkyi")
+
+[node name="MinViz" type="Label" parent="Visual Effects"]
+material = SubResource("ShaderMaterial_uncnm")
+layout_mode = 0
+offset_left = 49.0
+offset_top = 42.0
+offset_right = 710.0
+offset_bottom = 115.0
+text = "Minimize Visual Effects"
+label_settings = SubResource("LabelSettings_vtmsj")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Visual Effects"]
+layout_mode = 0
+offset_left = 55.0
+offset_top = 126.0
+offset_right = 265.0
+offset_bottom = 261.0
+
+[node name="CheckBoxEmpty" type="TextureRect" parent="Visual Effects/HBoxContainer"]
+layout_mode = 2
+texture = ExtResource("9_am76v")
+
+[node name="CheckBoxFilled" type="TextureRect" parent="Visual Effects/HBoxContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+texture = ExtResource("10_uncnm")
+
+[node name="check" type="TextureRect" parent="Visual Effects/HBoxContainer/CheckBoxFilled"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("11_2vxd0")
+
+[node name="HSeparator" type="HSeparator" parent="Visual Effects/HBoxContainer"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+
+[node name="on_off" type="Label" parent="Visual Effects/HBoxContainer"]
+material = SubResource("ShaderMaterial_uncnm")
+layout_mode = 2
+text = "off"
+label_settings = SubResource("LabelSettings_acqa2")

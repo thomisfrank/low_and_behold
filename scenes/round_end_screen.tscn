@@ -1,0 +1,165 @@
+[gd_scene load_steps=18 format=3 uid="uid://c2dq0181ma0og"]
+
+[ext_resource type="Shader" uid="uid://dvp6owddsdn58" path="res://scripts/shaders/TextJitter.gdshader" id="1_7ct8f"]
+[ext_resource type="Script" uid="uid://bqfxla0xiqm0e" path="res://scripts/round_end_screen.gd" id="1_uo1cw"]
+[ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="2_wienf"]
+[ext_resource type="PackedScene" uid="uid://d2xo53nv87pnp" path="res://scenes/opponent_hand.tscn" id="3_fecik"]
+[ext_resource type="PackedScene" uid="uid://lb3wfdukkw5e" path="res://scenes/player_hand.tscn" id="4_3p4nv"]
+[ext_resource type="Texture2D" uid="uid://ppvrxj4j4yfh" path="res://assets/UI/Button01.png" id="5_3p4nv"]
+[ext_resource type="Texture2D" uid="uid://btoets62xjq0h" path="res://assets/UI/Button03.png" id="6_uo1cw"]
+[ext_resource type="Texture2D" uid="uid://cvstb6gofxt0j" path="res://assets/UI/Button02.png" id="7_oigkx"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uo1cw"]
+shader = ExtResource("1_7ct8f")
+shader_parameter/jitter_rate = 4.50000016625
+shader_parameter/jitter_amount = 0.003
+
+[sub_resource type="LabelSettings" id="LabelSettings_oigkx"]
+font = ExtResource("2_wienf")
+font_size = 330
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2jx5y"]
+shader = ExtResource("1_7ct8f")
+shader_parameter/jitter_rate = 8.0
+shader_parameter/jitter_amount = 0.003
+
+[sub_resource type="LabelSettings" id="LabelSettings_fhx4j"]
+font = ExtResource("2_wienf")
+font_size = 150
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x6yp2"]
+shader = ExtResource("1_7ct8f")
+shader_parameter/jitter_rate = 8.0
+shader_parameter/jitter_amount = 0.003
+
+[sub_resource type="LabelSettings" id="LabelSettings_dfn6y"]
+font = ExtResource("2_wienf")
+font_size = 95
+
+[sub_resource type="LabelSettings" id="LabelSettings_yxtsy"]
+font = ExtResource("2_wienf")
+font_size = 300
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3p4nv"]
+shader = ExtResource("1_7ct8f")
+shader_parameter/jitter_rate = 2.50000007125
+shader_parameter/jitter_amount = 0.003
+
+[sub_resource type="LabelSettings" id="LabelSettings_uo1cw"]
+font = ExtResource("2_wienf")
+font_size = 50
+font_color = Color(0.17254902, 0.24313726, 0.3137255, 1)
+
+[node name="RoundEndScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_uo1cw")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+follow_viewport_enabled = true
+
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = -2.0
+offset_right = 2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.17184411, 0.24269372, 0.3133042, 0.328)
+
+[node name="OpponentScore" type="Label" parent="CanvasLayer"]
+material = SubResource("ShaderMaterial_uo1cw")
+custom_minimum_size = Vector2(207, 301)
+offset_left = 268.0
+offset_top = 118.0
+offset_right = 475.0
+offset_bottom = 449.0
+text = "#"
+label_settings = SubResource("LabelSettings_oigkx")
+
+[node name="opponent_hand" parent="CanvasLayer" instance=ExtResource("3_fecik")]
+visible = false
+
+[node name="OpponentWinCondition" type="Label" parent="CanvasLayer"]
+material = SubResource("ShaderMaterial_2jx5y")
+offset_left = 1298.0
+offset_top = 217.0
+offset_right = 1535.0
+offset_bottom = 368.0
+text = "Win!"
+label_settings = SubResource("LabelSettings_fhx4j")
+
+[node name="OpponentTotal" type="Label" parent="CanvasLayer"]
+material = SubResource("ShaderMaterial_x6yp2")
+offset_left = 1692.0
+offset_top = 254.0
+offset_right = 1752.0
+offset_bottom = 350.0
+text = "#"
+label_settings = SubResource("LabelSettings_dfn6y")
+
+[node name="PlayerScore" type="Label" parent="CanvasLayer"]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_uo1cw")
+custom_minimum_size = Vector2(207, 301)
+offset_left = 268.0
+offset_top = 715.0
+offset_right = 475.0
+offset_bottom = 1016.0
+text = "#"
+label_settings = SubResource("LabelSettings_yxtsy")
+
+[node name="PlayerWinCondition" type="Label" parent="CanvasLayer"]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_2jx5y")
+offset_left = 1298.0
+offset_top = 799.0
+offset_right = 1535.0
+offset_bottom = 950.0
+text = "Win!"
+label_settings = SubResource("LabelSettings_fhx4j")
+
+[node name="PlayerHand" parent="CanvasLayer" instance=ExtResource("4_3p4nv")]
+visible = false
+
+[node name="PlayerTotal" type="Label" parent="CanvasLayer"]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_x6yp2")
+offset_left = 1692.0
+offset_top = 816.0
+offset_right = 1752.0
+offset_bottom = 912.0
+scale = Vector2(0.99892837, 1)
+text = "#"
+label_settings = SubResource("LabelSettings_dfn6y")
+
+[node name="ContinueButton" type="CenterContainer" parent="CanvasLayer"]
+custom_minimum_size = Vector2(201, 54)
+offset_left = 814.0
+offset_top = 517.0
+offset_right = 1015.0
+offset_bottom = 571.0
+
+[node name="Button" type="TextureButton" parent="CanvasLayer/ContinueButton"]
+texture_filter = 1
+custom_minimum_size = Vector2(201, 54)
+layout_mode = 2
+tooltip_text = "Okay"
+texture_normal = ExtResource("5_3p4nv")
+texture_pressed = ExtResource("6_uo1cw")
+texture_hover = ExtResource("7_oigkx")
+
+[node name="ButtonLabel" type="Label" parent="CanvasLayer/ContinueButton"]
+material = SubResource("ShaderMaterial_3p4nv")
+layout_mode = 2
+text = "okay"
+label_settings = SubResource("LabelSettings_uo1cw")
+horizontal_alignment = 1
+vertical_alignment = 1

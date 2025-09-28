@@ -1,29 +1,26 @@
+
+# =====================================
+# Deck.gd
+# Manages deck stack, top card, and card draw logic
+# =====================================
 extends SubViewportContainer
 
-#-----------------------------------------------------------------------------
-# Script configuration
-#-----------------------------------------------------------------------------
+# Card scene and resource paths
 const CardScene = preload("res://scenes/cards.tscn")
 const DEFAULT_CARD_BACK_PATH = "res://scripts/resources/CardBack.tres"
 
-#-----------------------------------------------------------------------------
-# Node references
-#-----------------------------------------------------------------------------
+# UI node references
 @onready var stack_layers: Control = $DeckViewport/DeckControl/StackLayers
 @onready var top_card: Node = $DeckViewport/DeckControl/TopCard
 @onready var count_label: Label = $DeckViewport/DeckControl/CardCount/AspectRatioContainer/CardCountLabel
 
-#-----------------------------------------------------------------------------
-# Exports / configuration
-#-----------------------------------------------------------------------------
+# Deck configuration
 @export var initial_count: int = 48
 @export var stack_offset: int = 60
 @export var stack_x_offset: int = 8
 @export_enum("TwoSwap", "TwoDraw", "FourSwap", "FourDraw", "SixSwap", "SixDraw", "EightSwap", "EightDraw", "TenSwap", "TenDraw", "CardBack") var top_card_key: String = "CardBack"
 
-#-----------------------------------------------------------------------------
 # Internal state
-#-----------------------------------------------------------------------------
 var _count: int = 0
 
 func _ready():

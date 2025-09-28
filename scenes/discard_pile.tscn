@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3 uid="uid://c28gtgbys4mdo"]
+
+[ext_resource type="PackedScene" uid="uid://lb3wfdukkw5e" path="res://scenes/player_hand.tscn" id="1_towwt"]
+
+[node name="DiscardPile" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Stack0" parent="." instance=ExtResource("1_towwt")]
+layout_mode = 1
+
+[node name="Stack1" parent="." instance=ExtResource("1_towwt")]
+layout_mode = 1
+offset_left = 50.0
+offset_top = -5.0000005
+offset_right = 50.0
+offset_bottom = -5.0
+rotation = -0.10588944
+
+[node name="Stack3" parent="." instance=ExtResource("1_towwt")]
+layout_mode = 1
+offset_left = 12.0
+offset_top = 2.0000002
+offset_right = 12.0
+offset_bottom = 2.0
+rotation = 0.036413863

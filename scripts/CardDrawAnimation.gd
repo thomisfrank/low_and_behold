@@ -1,16 +1,16 @@
+
+# =====================================
+# CardDrawAnimation.gd
+# Handles card flip + move animation for card instances
+# =====================================
 extends Node2D
 class_name CardDrawAnimation
 @export var debug_logging: bool = false
 
-#-----------------------------------------------------------------------------
-# Card draw animation
-# Handles a flip + move animation for created card instances. The animation
-# instantiates a card, shows the back, flips it during movement, then reveals
-# the provided card data. Emits `animation_finished(card)` when done.
-#-----------------------------------------------------------------------------
-
+# Emits when animation finishes
 signal animation_finished(card: Control)
 
+# Card scene and script references
 const CardScene = preload("res://scenes/cards.tscn")
 const CardScript = preload("res://scripts/NewCard.gd")
 
@@ -22,7 +22,7 @@ const CardScript = preload("res://scripts/NewCard.gd")
 @export var final_scale: Vector2 = Vector2(0.8, 0.8)
 @export var max_rotation_during_move: float = 10.0
 
-# Motion/easing configuration
+# Tween configuration
 @export var tween_ease: int = Tween.EASE_IN_OUT
 @export var tween_trans: int = Tween.TRANS_CUBIC
 
@@ -45,25 +45,23 @@ var flip_tween: Tween
 var move_tween: Tween
 
 func _ready() -> void:
+	# No setup needed
 	pass
 
 
 func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vector2, final_rotation: float = 0.0, end_scale: Vector2 = Vector2.ONE, from_scale: Vector2 = Vector2.ONE, p_suppress_reveal: bool = false) -> void:
+	# Animate card draw: flip + move
 	if is_animating:
 		return
-
 	if debug_logging:
 		print("[Anim] animate_card_draw START -> data:", card_data, " from:", from_pos, " to:", to_pos, " end_scale:", end_scale, " from_scale:", from_scale, " suppress_reveal:", p_suppress_reveal)
-
 	start_position = from_pos
 	target_position = to_pos
 	target_rotation = final_rotation
 	target_scale = end_scale
 	start_scale = from_scale
-
 	animating_card = CardScene.instantiate() as Control
-
-	# Parent under a CanvasLayer optionally so animation is always on top
+	# Optionally parent under CanvasLayer for top rendering
 	if use_canvas_layer and get_parent():
 		var layer = CanvasLayer.new()
 		layer.name = "CardDrawLayer"
@@ -71,22 +69,15 @@ func animate_card_draw(card_data: CustomCardData, from_pos: Vector2, to_pos: Vec
 		layer.add_child(animating_card)
 	else:
 		add_child(animating_card)
-
-	# Use global_position so motion is consistent regardless of parent
 	animating_card.global_position = start_position
 	animating_card.rotation_degrees = 0
 	animating_card.scale = start_scale
-
-	# Initially show card back, then flip to reveal actual data
+	# Show card back, then flip to reveal
 	var card_back_data = load("res://scripts/resources/CardBack.tres")
 	animating_card.call_deferred("display", card_back_data)
-
-	# Honor caller's request to keep the back visible (useful for opponent slots)
 	suppress_reveal = p_suppress_reveal
-
 	is_animating = true
 	current_frame = 0
-	# Begin flip+move
 	if debug_logging:
 		print("[Anim] starting flip animation (flip_duration=", flip_duration, ", move_duration=", move_duration, ")")
 	_start_flip_animation(card_data)

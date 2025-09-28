@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://d4gm834l2y443" path="res://assets/icons/swap.png" id="2_j11c8"]
 
 [resource]
+effect_type = 0
 script = ExtResource("1_jkbmh")
 card_name = "Four Draw"
 icon = ExtResource("2_j11c8")

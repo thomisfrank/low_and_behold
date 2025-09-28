@@ -1,29 +1,15 @@
-[gd_scene load_steps=15 format=3 uid="uid://b4h2dmijcovco"]
+[gd_scene load_steps=9 format=3 uid="uid://b4h2dmijcovco"]
 
 [ext_resource type="Shader" uid="uid://u4c18necgjr2" path="res://scripts/shaders/digitize.gdshader" id="1_ut3h4"]
 [ext_resource type="Texture2D" uid="uid://ds4blade07koo" path="res://assets/UI/InfoBox.png" id="1_vf55b"]
 [ext_resource type="Shader" uid="uid://dvp6owddsdn58" path="res://scripts/shaders/TextJitter.gdshader" id="1_ybtrl"]
-[ext_resource type="Texture2D" uid="uid://ppvrxj4j4yfh" path="res://assets/UI/Button01.png" id="2_bynor"]
 [ext_resource type="Script" uid="uid://bfoshuxmk7uo7" path="res://scripts/detail_box.gd" id="2_o6niq"]
-[ext_resource type="Texture2D" uid="uid://btoets62xjq0h" path="res://assets/UI/Button03.png" id="3_ogne6"]
-[ext_resource type="Texture2D" uid="uid://cvstb6gofxt0j" path="res://assets/UI/Button02.png" id="4_3bwdu"]
-[ext_resource type="Texture2D" uid="uid://bpbjkfh88xvag" path="res://assets/UI/ButtonClose.png" id="5_qx625"]
 [ext_resource type="FontFile" uid="uid://i4xek7v21bic" path="res://assets/fonts/PixelifySans-VariableFont_wght.ttf" id="6_bynor"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_o6niq"]
 shader = ExtResource("1_ut3h4")
 shader_parameter/jitter_amount = 2.0
 shader_parameter/jitter_rate = 8.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ybtrl"]
-shader = ExtResource("1_ybtrl")
-shader_parameter/jitter_rate = 2.50000007125
-shader_parameter/jitter_amount = 0.0010000000475
-
-[sub_resource type="LabelSettings" id="LabelSettings_3bwdu"]
-font = ExtResource("6_bynor")
-font_size = 22
-font_color = Color(0.17254902, 0.24313726, 0.3137255, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ut3h4"]
 shader = ExtResource("1_ybtrl")
@@ -49,50 +35,11 @@ script = ExtResource("2_o6niq")
 [node name="Box" type="TextureRect" parent="."]
 texture_filter = 1
 layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 222.0
+offset_bottom = 222.0
+scale = Vector2(1, 0.998395)
 texture = ExtResource("1_vf55b")
-
-[node name="Button" type="TextureButton" parent="Box"]
-texture_filter = 1
-layout_mode = 0
-offset_left = 13.999999
-offset_top = 197.99998
-offset_right = 215.0
-offset_bottom = 251.99998
-scale = Vector2(0.96000075, 0.96000075)
-texture_normal = ExtResource("2_bynor")
-texture_pressed = ExtResource("3_ogne6")
-texture_hover = ExtResource("4_3bwdu")
-stretch_mode = 0
-
-[node name="ButtonLabel" type="Label" parent="Box/Button"]
-unique_name_in_owner = true
-texture_filter = 1
-material = SubResource("ShaderMaterial_ybtrl")
-layout_mode = 0
-offset_left = 31.24998
-offset_top = 10.416672
-offset_right = 159.24998
-offset_bottom = 38.41667
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("6_bynor")
-text = "Swap Cards"
-label_settings = SubResource("LabelSettings_3bwdu")
-autowrap_mode = 3
-
-[node name="CloseButton" type="TextureButton" parent="Box"]
-unique_name_in_owner = true
-visible = false
-texture_filter = 1
-layout_mode = 0
-offset_left = 196.0
-offset_top = 11.999999
-offset_right = 244.0
-offset_bottom = 59.0
-scale = Vector2(0.2800008, 0.2800008)
-texture_normal = ExtResource("5_qx625")
-stretch_mode = 0
+expand_mode = 4
 
 [node name="CardDescription" type="Label" parent="Box"]
 texture_filter = 1

@@ -1,15 +1,14 @@
+
+# =====================================
+# NewCard.gd
+# Card node: handles display, lock state, and UI references
+# =====================================
 extends Control
 
-#-----------------------------------------------------------------------------
-# Script Configuration
-#-----------------------------------------------------------------------------
-
+# Debug logging toggle
 @export var debug_logging: bool = false
 
-#-----------------------------------------------------------------------------
-# Node References
-#-----------------------------------------------------------------------------
-
+# UI node references
 @onready var top_value_label: Label = $"CardsViewport/CardsLabel/Values/TopValue"
 @onready var bottom_value_label: Label = $"CardsViewport/CardsLabel/Values/BottomValue"
 @onready var values_container: Control = $"CardsViewport/CardsLabel/Values"
@@ -19,27 +18,34 @@ extends Control
 @onready var back_frame: TextureRect = $"CardsViewport/CardsLabel/CardBackground/Padding/BackFrame"
 @onready var background_container: AspectRatioContainer = $"CardsViewport/CardsLabel/CardBackground"
 
-#-----------------------------------------------------------------------------
-# Internal State
-#-----------------------------------------------------------------------------
-
+# Internal state
 var _card_data: CustomCardData = null
 var _material_instanced: bool = false
 
-#-----------------------------------------------------------------------------
-# Engine Hooks
-#-----------------------------------------------------------------------------
+# Locked state and overlay
+var locked: bool = false
+var lock_overlay: ColorRect = null
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
+	# Called when node enters scene tree
 	if debug_logging:
 		print("[Card] _ready: Card node initialized")
-
-	# Force gradient shader to render below other UI elements within the card.
+	# Force gradient shader to render below other UI elements
 	if moving_gradient and moving_gradient.material:
 		moving_gradient.material.render_priority = -10
-
-	# Ensure this control can receive mouse events if parent scripts need them.
+	# Create lock overlay (white, semi-transparent)
+	lock_overlay = ColorRect.new()
+	lock_overlay.color = Color(1,1,1,0.6)
+	lock_overlay.visible = false
+	lock_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(lock_overlay)
+	lock_overlay.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lock_overlay.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lock_overlay.anchor_left = 0
+	lock_overlay.anchor_top = 0
+	lock_overlay.anchor_right = 1
+	lock_overlay.anchor_bottom = 1
+	lock_overlay.z_index = 999
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
 #-----------------------------------------------------------------------------
@@ -72,6 +78,27 @@ func display(data: CustomCardData):
 	# Store original visual state (kept for callers that may want to use it);
 	# other scripts (deck/hand) should manage hover/interactions.
 	# Note: we intentionally do not modify scale/z_index here.
+
+	# Reset lock overlay on display
+	unlock_card()
+
+# Locks the card, making it non-interactive and showing an overlay.
+func lock_card():
+	locked = true
+	if lock_overlay:
+		lock_overlay.visible = true
+		# Apply glitch shader to overlay
+		var shader = load("res://scripts/shaders/PixelPlayArea.gdshader")
+		var mat = ShaderMaterial.new()
+		mat.shader = shader
+		lock_overlay.material = mat
+
+# Unlocks the card, restoring interactivity.
+func unlock_card():
+	locked = false
+	if lock_overlay:
+		lock_overlay.visible = false
+		lock_overlay.material = null
 
 #-----------------------------------------------------------------------------
 # Signal handling removed

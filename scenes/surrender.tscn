@@ -1,0 +1,67 @@
+[gd_scene load_steps=13 format=3 uid="uid://d0tsha6hj6nd2"]
+
+[ext_resource type="Texture2D" uid="uid://ppvrxj4j4yfh" path="res://assets/UI/Button01.png" id="1_bcm4s"]
+[ext_resource type="Texture2D" uid="uid://dcsl5jlrbntjk" path="res://assets/animation_slides/flag/Flag0.png" id="1_dvx0u"]
+[ext_resource type="Texture2D" uid="uid://btoets62xjq0h" path="res://assets/UI/Button03.png" id="2_q8bmh"]
+[ext_resource type="Texture2D" uid="uid://nr2vpa18blsq" path="res://assets/animation_slides/flag/Flag1.png" id="2_qh138"]
+[ext_resource type="Texture2D" uid="uid://tw625hyheexg" path="res://assets/animation_slides/flag/Flag2.png" id="3_l10jh"]
+[ext_resource type="Texture2D" uid="uid://cvstb6gofxt0j" path="res://assets/UI/Button02.png" id="3_xv4p4"]
+[ext_resource type="Texture2D" uid="uid://cv7aspra6ucu6" path="res://assets/animation_slides/flag/Flag3.png" id="4_rivlq"]
+[ext_resource type="FontFile" uid="uid://i4xek7v21bic" path="res://assets/fonts/PixelifySans-VariableFont_wght.ttf" id="5_qh138"]
+[ext_resource type="Shader" uid="uid://dvp6owddsdn58" path="res://scripts/shaders/TextJitter.gdshader" id="8_vgdaa"]
+
+[sub_resource type="AnimatedTexture" id="AnimatedTexture_qdgoy"]
+frames = 4
+speed_scale = 3.5
+frame_0/texture = ExtResource("1_dvx0u")
+frame_1/texture = ExtResource("2_qh138")
+frame_1/duration = 1.0
+frame_2/texture = ExtResource("3_l10jh")
+frame_2/duration = 1.0
+frame_3/texture = ExtResource("4_rivlq")
+frame_3/duration = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vgdaa"]
+shader = ExtResource("8_vgdaa")
+shader_parameter/jitter_rate = 4.5
+shader_parameter/jitter_amount = 0.003
+
+[sub_resource type="LabelSettings" id="LabelSettings_hl1i3"]
+font = ExtResource("5_qh138")
+font_size = 25
+
+[node name="SurrenderButton" type="TextureButton"]
+self_modulate = Color(0.17254902, 0.24313726, 0.3137255, 1)
+custom_minimum_size = Vector2(201, 54)
+offset_right = 201.0
+offset_bottom = 54.0
+texture_normal = ExtResource("1_bcm4s")
+texture_pressed = ExtResource("2_q8bmh")
+texture_hover = ExtResource("3_xv4p4")
+stretch_mode = 5
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="flag" type="TextureRect" parent="HBoxContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+texture = SubResource("AnimatedTexture_qdgoy")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="text" type="Label" parent="HBoxContainer"]
+texture_filter = 1
+material = SubResource("ShaderMaterial_vgdaa")
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+text = "Surrender"
+label_settings = SubResource("LabelSettings_hl1i3")
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -1,12 +1,13 @@
 extends Node
 
-#-----------------------------------------------------------------------------
-# Script Configuration
-#-----------------------------------------------------------------------------
 
-# Background picker for scenes/backgrounds.tscn
-# Designed to run as an Autoload (singleton) or attached to the `backgrounds` node.
+# =====================================
+# Backgrounds.gd
+# Manages background selection and randomization
+# =====================================
 
+
+# Configuration
 @export var randomize_on_ready: bool = true
 @export var randomize_shader_speed: bool = true
 @export var shader_speed_min: float = 0.002
@@ -21,14 +22,10 @@ extends Node
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	# Seed RNG for run-to-run variation
-	randomize()
-
+	# Called when node enters scene tree
+	randomize() # Seed RNG
 	if randomize_on_ready:
-		# Try to find a backgrounds node in the current scene and apply immediately
-		_find_and_apply()
-
-	# Listen for nodes being added so when the scene loads the backgrounds node will be picked up
+		_find_and_apply() # Apply random background
 	get_tree().connect("node_added", Callable(self, "_on_node_added"))
 
 
@@ -44,23 +41,21 @@ func _on_node_added(node: Node) -> void:
 
 # Finds a backgrounds node and shows a specific background by name.
 func show_background_by_name(requested_name: String) -> bool:
+	# Show a specific background by name
 	var bg_node = _find_backgrounds_node()
 	if not bg_node:
 		push_warning("[Backgrounds] Could not find a 'backgrounds' node in the scene.")
 		return false
-
 	var landscape = bg_node.get_node_or_null("Landscape")
 	if not landscape:
 		push_warning("[Backgrounds] 'Landscape' node not found under the 'backgrounds' node.")
 		return false
-
 	var found_texture: TextureRect = null
 	for child in landscape.get_children():
 		if child is TextureRect:
 			if child.name == requested_name:
 				found_texture = child
 			child.visible = false # Hide all textures initially
-
 	if found_texture:
 		found_texture.visible = true
 		if debug_logging:
@@ -68,8 +63,6 @@ func show_background_by_name(requested_name: String) -> bool:
 		return true
 	else:
 		push_warning("[Backgrounds] Background with name '%s' not found." % requested_name)
-		# As a fallback, maybe show the first one? Or just leave it blank.
-		# For now, we do nothing.
 		return false
 
 #-----------------------------------------------------------------------------
@@ -78,18 +71,14 @@ func show_background_by_name(requested_name: String) -> bool:
 
 # Finds the 'backgrounds' node in the scene.
 func _find_backgrounds_node() -> Node:
-	# If this script is attached to the backgrounds node itself, use it
+	# Find the backgrounds node in the scene
 	if self.name == "backgrounds" or has_node("Landscape"):
 		return self
-
-	# Otherwise try current scene first
 	var current_scene = get_tree().current_scene
 	if current_scene:
 		var bg_node = _recursive_find(current_scene, "backgrounds")
 		if bg_node:
 			return bg_node
-
-	# Last resort: search the whole tree from the root
 	return _recursive_find(get_tree().get_root(), "backgrounds")
 
 

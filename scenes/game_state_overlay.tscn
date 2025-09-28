@@ -1,0 +1,43 @@
+[gd_scene load_steps=5 format=3 uid="uid://durgvndden1pf"]
+
+[ext_resource type="Shader" uid="uid://dvp6owddsdn58" path="res://scripts/shaders/TextJitter.gdshader" id="1_r74ho"]
+[ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="2_b1xj6"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8y63c"]
+shader = ExtResource("1_r74ho")
+shader_parameter/jitter_rate = 5.00000019
+shader_parameter/jitter_amount = 0.003
+
+[sub_resource type="LabelSettings" id="LabelSettings_w5ajn"]
+font = ExtResource("2_b1xj6")
+font_size = 150
+
+[node name="GameStateOverlay" type="CanvasLayer"]
+layer = 100
+
+[node name="OverlayRect" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.172, 0.243, 0.314, 0.3)
+
+[node name="Label" type="Label" parent="."]
+texture_filter = 1
+material = SubResource("ShaderMaterial_8y63c")
+custom_minimum_size = Vector2(400, 100)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -307.0
+offset_top = -75.5
+offset_right = 307.0
+offset_bottom = 75.5
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+text = "Game State"
+label_settings = SubResource("LabelSettings_w5ajn")
+horizontal_alignment = 1
+vertical_alignment = 1

@@ -1,42 +1,41 @@
-# PlayerHand.gd (Complete Reworked Script)
-
+# =====================================
+# PlayerHand.gd
+# Manages player hand, card layout, drag-and-drop, and hover effects
+# =====================================
 extends Control
 class_name PlayerHand
 
-## === PlayerHand: Layout & Settings ===
+# Layout & settings
 @export_group("Hand Layout")
-@export var slot_positions: Array[Vector2] = [
-	Vector2(480, 50),
-	Vector2(640, 50),
-	Vector2(800, 50),
-	Vector2(960, 50)
-]
+@export var slot_positions: Array[Vector2] = [Vector2(480, 50), Vector2(640, 50), Vector2(800, 50), Vector2(960, 50)]
 @export var slot_rotations: Array[float] = [0.0, 0.0, 0.0, 0.0]
 @export var slot_scales: Array[Vector2] = [Vector2.ONE, Vector2.ONE, Vector2.ONE, Vector2.ONE]
-
 @export_group("Hand Behavior")
 @export var max_cards: int = 4
-
 @export_group("Hover Effects")
 @export var hover_scale: float = 1.5
 @export var hover_lift: float = -100.0
 @export var displacement_amount: float = 80.0
 @export var hover_duration: float = 0.2
-
-# New exports for hover position and rotation
+@export var hover_margin: float = 8.0
 @export var hover_position_offset: Vector2 = Vector2(0, -100)
 @export var hover_rotation: float = 0.0
 
-## === PlayerHand: Internal State ===
-# This array will now hold the ACTUAL card nodes, not placeholders.
+# Internal state
 var managed_cards: Array[Node] = []
 var card_data_map: Array[Resource] = []
-
 var hovered_index: int = -1
 var hover_tween: Tween
+var dragging: bool = false
+var drag_index: int = -1
+var drag_offset: Vector2 = Vector2.ZERO
+var play_area_node: Control = null
 
-## === PlayerHand: Initialization ===
+# Signal to notify GameManager when a card is played via drag
+signal card_played(card_index)
+
 func _ready():
+	# Initialize hand and connect signals
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	managed_cards.resize(max_cards)
@@ -44,20 +43,107 @@ func _ready():
 	for i in range(max_cards):
 		managed_cards[i] = null
 		card_data_map[i] = null
+	if get_tree().get_current_scene().has_node("GameManager"):
+		var gm = get_tree().get_current_scene().get_node("GameManager")
+		connect("card_played", Callable(gm, "player_action_from_hand"))
+	var main = get_tree().get_current_scene().get_node_or_null("main")
+	if main:
+		var ui_layer = main.get_node_or_null("UILayer")
+		if ui_layer:
+			play_area_node = ui_layer.get_node_or_null("PlayArea")
+			if play_area_node:
+				play_area_node.visible = true
 
-## === PlayerHand: Process & Hover Polling ===
 func _process(_delta):
-	# Continuously check which card is under the mouse
+	# Handle card dragging and hover polling
+	if dragging and drag_index != -1:
+		var card = managed_cards[drag_index]
+		if is_instance_valid(card):
+			card.position = get_global_mouse_position() - drag_offset
+	if dragging:
+		return
 	var top_idx = _get_topmost_card_under_mouse()
-
 	if top_idx != hovered_index:
-		# Mouse moved off the old card, so end its hover effect
 		if hovered_index != -1:
 			_on_card_hover_end()
-		
-		# Mouse moved onto a new card, so start its hover effect
 		if top_idx != -1:
 			_on_card_hover_start(top_idx)
+	elif top_idx == -1 and hovered_index != -1:
+		_on_card_hover_end()
+# === Drag-and-Drop Logic ===
+func _gui_input(event):
+	# Handle drag and drop to play cards
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.is_pressed():
+			var top_idx = _get_topmost_card_under_mouse()
+			if top_idx != -1:
+				_on_card_drag_start(top_idx)
+		else:
+			_on_card_drag_end()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.is_pressed():
+		_on_card_drag_end()
+
+
+
+# === Play Card API (called by GameManager) ===
+func play_card(card_index: int):
+	if card_index < 0 or card_index >= managed_cards.size():
+		push_warning("[PlayerHand] play_card: Invalid index %d" % card_index)
+		return
+	var card = managed_cards[card_index]
+	if is_instance_valid(card) and card.has_method("locked") and card.locked:
+		push_warning("[PlayerHand] play_card: Card at %d is locked and cannot be played." % card_index)
+		return
+	if is_instance_valid(card):
+		card.queue_free()
+		managed_cards[card_index] = null
+		card_data_map[card_index] = null
+# Discard a card at the given index
+func discard_card(card_index: int):
+	if card_index < 0 or card_index >= managed_cards.size():
+		push_warning("[PlayerHand] discard_card: Invalid index %d" % card_index)
+		return
+	var card = managed_cards[card_index]
+	if is_instance_valid(card):
+		card.queue_free()
+		managed_cards[card_index] = null
+		card_data_map[card_index] = null
+
+# Remove all cards from hand (for round discard)
+func discard_all_cards():
+		for i in range(managed_cards.size()):
+			var card = managed_cards[i]
+			if is_instance_valid(card):
+				card.queue_free()
+			managed_cards[i] = null
+			card_data_map[i] = null
+
+func get_card_count() -> int:
+	var count = 0
+	for card in managed_cards:
+		if is_instance_valid(card):
+			count += 1
+	return count
+
+# Get the last played Swap card slot (for swap effect)
+func get_last_played_swap_slot():
+	for i in range(managed_cards.size()-1, -1, -1):
+		var card = managed_cards[i]
+		var data = card_data_map[i]
+		if is_instance_valid(card) and data and data.get("effect") == "Swap":
+			return card
+	return null
+
+# Lock/unlock a card at the given index
+func lock_card(card_index: int):
+	var card = managed_cards[card_index]
+	if is_instance_valid(card) and card.has_method("lock_card"):
+		card.lock_card()
+
+func unlock_card(card_index: int):
+	var card = managed_cards[card_index]
+	if is_instance_valid(card) and card.has_method("unlock_card"):
+		card.unlock_card()
 
 ## === PlayerHand: Core Logic ===
 
@@ -81,90 +167,69 @@ func receive_card_node(card_node: Control, slot_index: int, card_data: CustomCar
 	managed_cards[slot_index] = card_node
 	card_data_map[slot_index] = card_data
 
-	# Apply the final layout position, scale, and rotation
-	card_node.position = slot_positions[slot_index]
-	card_node.scale = slot_scales[slot_index]
-	card_node.rotation_degrees = slot_rotations[slot_index]
-	# Set Z-index so cards stack left-to-right, first card at the bottom
+	# Only set position/scale/rotation if the card is not already in the correct place
+	var should_snap = false
+	if card_node.position.distance_to(slot_positions[slot_index]) > 2.0:
+		should_snap = true
+	if card_node.scale.distance_to(slot_scales[slot_index]) > 0.05:
+		should_snap = true
+	if abs(card_node.rotation_degrees - slot_rotations[slot_index]) > 1.0:
+		should_snap = true
+	if should_snap:
+		card_node.position = slot_positions[slot_index]
+		card_node.scale = slot_scales[slot_index]
+		card_node.rotation_degrees = slot_rotations[slot_index]
+	# Always set Z-index so cards stack left-to-right, first card at the bottom
 	card_node.z_index = max_cards - slot_index
 
-	
-## === PlayerHand: Hover System ===
-
+# === Hover Helpers ===
 func _get_topmost_card_under_mouse() -> int:
-	var mouse_pos = get_global_mouse_position()
-	var best_idx = -1
-	var best_z = -1
-
-	# Iterate backwards to check topmost cards first
-	for i in range(managed_cards.size() - 1, -1, -1):
+	# Returns the index of the topmost card under the mouse, or -1 if none
+	var mouse_pos = get_local_mouse_position()
+	for i in range(managed_cards.size()-1, -1, -1):
 		var card = managed_cards[i]
-		if is_instance_valid(card) and card is Control:
-			if card.get_global_rect().has_point(mouse_pos) and card.z_index > best_z:
-				best_idx = i
-				best_z = card.z_index
-	
-	return best_idx
+		if is_instance_valid(card):
+			var card_size = card.size * card.scale
+			var rect = Rect2(card.position - card_size / 2, card_size)
+			if rect.has_point(mouse_pos):
+				return i
+	return -1
 
-func _on_card_hover_start(card_index: int):
-	hovered_index = card_index
-	_animate_hover(card_index)
-	# Show detail box via UIManager
-	if card_data_map[card_index] and managed_cards[card_index]:
-		UIManager.show_card_detail(card_data_map[card_index], managed_cards[card_index])
+func _on_card_hover_start(idx: int):
+	hovered_index = idx
+	var card = managed_cards[idx]
+	if is_instance_valid(card):
+		card.scale = slot_scales[idx] * hover_scale
+		card.position += hover_position_offset
+		card.rotation_degrees = hover_rotation
 
 func _on_card_hover_end():
+	if hovered_index == -1:
+		return
+	var card = managed_cards[hovered_index]
+	if is_instance_valid(card):
+		card.scale = slot_scales[hovered_index]
+		card.position = slot_positions[hovered_index]
+		card.rotation_degrees = slot_rotations[hovered_index]
 	hovered_index = -1
-	_animate_hover(-1) # Animate back to default state
-	# Hide detail box via UIManager
-	UIManager.hide_card_detail()
 
-func _animate_hover(target_index: int):
-	if hover_tween:
-		hover_tween.kill()
-	hover_tween = create_tween().set_parallel(true)
+func _on_card_drag_start(idx: int):
+	dragging = true
+	drag_index = idx
+	var card = managed_cards[idx]
+	if is_instance_valid(card):
+		drag_offset = get_global_mouse_position() - card.position
 
-	for i in range(managed_cards.size()):
-		var card = managed_cards[i]
-		if not is_instance_valid(card):
-			continue
-
-		var target_pos = slot_positions[i]
-		var target_scale = slot_scales[i]
-		var target_rot = slot_rotations[i]
-		var target_z = i # Default Z-index
-
-		if target_index != -1: # A card is being hovered
-			if i == target_index:
-				target_pos += hover_position_offset
-				target_scale *= hover_scale
-				target_rot = hover_rotation
-				target_z = 100 # Temporarily bring to front
+func _on_card_drag_end():
+	if dragging:
+		dragging = false
+		var card = managed_cards[drag_index]
+		if is_instance_valid(card):
+			if play_area_node and play_area_node.get_global_rect().has_point(get_global_mouse_position()):
+				emit_signal("card_played", drag_index)
 			else:
-				var displacement = Vector2.ZERO
-				if i < target_index:
-					displacement.x = -displacement_amount
-				else:
-					displacement.x = displacement_amount
-				target_pos += displacement
-		# Animate the properties
-		hover_tween.tween_property(card, "position", target_pos, hover_duration)
-		hover_tween.tween_property(card, "scale", target_scale, hover_duration)
-		hover_tween.tween_property(card, "rotation_degrees", target_rot, hover_duration)
-		# Set stacking order: hovered card gets 100, others get their slot index
-		if target_index != -1 and i == target_index:
-			card.z_index = 100
-		else:
-			card.z_index = max_cards - i
-
-## === PlayerHand: Public API (for GameManager) ===
-
-# These functions are still needed by GameManager to know where to animate the card TO.
-func get_slot_position(index: int): # The return type hint is removed to allow returning null
-	if index >= 0 and index < slot_positions.size():
-		# This part is the same: return the correct global position if the slot is valid.
-		return global_position + slot_positions[index]
-	else:
-		# This is the change: return null to signal that the draw should fail.
-		push_warning("[PlayerHand] Requested slot index %s is out of range." % index)
-		return null
+				# Snap back to hand
+				card.position = slot_positions[drag_index]
+				card.scale = slot_scales[drag_index]
+				card.rotation_degrees = slot_rotations[drag_index]
+		drag_index = -1

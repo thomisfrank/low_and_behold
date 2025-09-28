@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://mhehyjydjbrj" path="res://scripts/CardData.gd" id="1_wtwkk"]
 
 [resource]
+effect_type = 0
 script = ExtResource("1_wtwkk")
 card_name = "Two Swap"
 icon = ExtResource("1_ba7ke")

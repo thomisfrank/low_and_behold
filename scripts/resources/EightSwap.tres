@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://djecb80tl3bvw" path="res://assets/card_resources/FrontFrame.png" id="1_xcuq2"]
 
 [resource]
+effect_type = 0
 script = ExtResource("1_j8mun")
 card_name = "Eight Swap"
 icon = ExtResource("1_gddip")
