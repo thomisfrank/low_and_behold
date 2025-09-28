@@ -1,8 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://dhvcbgkt88duf"]
+[gd_scene load_steps=7 format=3 uid="uid://dhvcbgkt88duf"]
 
 [ext_resource type="Script" uid="uid://b4emp08et8e7h" path="res://scripts/round_counter.gd" id="1_0kruc"]
 [ext_resource type="Texture2D" uid="uid://xbt7kksolpi7" path="res://assets/UI/RoundCounter.png" id="1_3lywf"]
 [ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="2_0kruc"]
+[ext_resource type="Shader" uid="uid://dvp6owddsdn58" path="res://scripts/shaders/TextJitter.gdshader" id="3_q54xr"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ioxo1"]
+shader = ExtResource("3_q54xr")
+shader_parameter/jitter_rate = 4.50000016625
+shader_parameter/jitter_amount = 0.0010000000475
 
 [sub_resource type="LabelSettings" id="LabelSettings_q54xr"]
 font = ExtResource("2_0kruc")
@@ -25,6 +31,7 @@ texture = ExtResource("1_3lywf")
 
 [node name="Label" type="Label" parent="Frame"]
 texture_filter = 1
+material = SubResource("ShaderMaterial_ioxo1")
 layout_mode = 0
 offset_left = 93.0
 offset_top = 23.0

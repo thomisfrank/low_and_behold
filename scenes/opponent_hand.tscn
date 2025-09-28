@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://d2xo53nv87pnp"]
 
-[ext_resource type="Script" uid="uid://def0u6qb8h0on" path="res://opponent_hand.gd" id="1_s8uup"]
+[ext_resource type="Script" uid="uid://def0u6qb8h0on" path="res://scripts/opponent_hand.gd" id="1_s8uup"]
 [ext_resource type="PackedScene" uid="uid://denrvbd0f4xji" path="res://scenes/cards.tscn" id="2_i4ww5"]
 
 [node name="opponent_hand" type="Control"]

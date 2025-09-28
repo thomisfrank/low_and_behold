@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://cikg76322k06p"]
+[gd_scene load_steps=13 format=3 uid="uid://cikg76322k06p"]
 
 [ext_resource type="Texture2D" uid="uid://bxsomb5x1yr6u" path="res://assets/UI/PlayerScoreFrame.png" id="1_27tpy"]
 [ext_resource type="Script" uid="uid://cwnovhw2f2xxh" path="res://scripts/score_panel.gd" id="1_amt3t"]
@@ -6,8 +6,14 @@
 [ext_resource type="Texture2D" uid="uid://p78ndvak2hpt" path="res://assets/UI/ActionCounterFrame.png" id="3_amt3t"]
 [ext_resource type="FontFile" uid="uid://ra6mx2vlrw83" path="res://assets/fonts/Jacquard24-Regular.ttf" id="3_jfakj"]
 [ext_resource type="Texture2D" uid="uid://46jsonjrko0r" path="res://assets/UI/OpponentScoreFrame.png" id="3_qok14"]
+[ext_resource type="Shader" uid="uid://dvp6owddsdn58" path="res://scripts/shaders/TextJitter.gdshader" id="3_tx78e"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_amt3t"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3xl2o"]
+shader = ExtResource("3_tx78e")
+shader_parameter/jitter_rate = 4.50000016625
+shader_parameter/jitter_amount = 0.0010000000475
 
 [sub_resource type="LabelSettings" id="LabelSettings_qok14"]
 font = ExtResource("3_jfakj")
@@ -15,6 +21,11 @@ font_size = 48
 font_color = Color(0.17254902, 0.24313726, 0.3137255, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_tx78e"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_68au4"]
+shader = ExtResource("3_tx78e")
+shader_parameter/jitter_rate = 4.50000016625
+shader_parameter/jitter_amount = 0.0010000000475
 
 [node name="ScorePanel" type="Control"]
 layout_mode = 3
@@ -46,6 +57,7 @@ stretch_mode = 2
 
 [node name="ScoreTracker" type="Label" parent="PlayerScore/ScoreFrame"]
 texture_filter = 1
+material = SubResource("ShaderMaterial_3xl2o")
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.190625
@@ -106,6 +118,7 @@ texture = ExtResource("3_qok14")
 
 [node name="ScoreTracker" type="Label" parent="OpponentScore/frame"]
 texture_filter = 1
+material = SubResource("ShaderMaterial_68au4")
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.190625

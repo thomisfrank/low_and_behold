@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://dmmdwhr3dmpoj"]
-
-[ext_resource type="Script" uid="uid://cr1ewpegyxa1f" path="res://scripts/SimpleCardTest.gd" id="1_errlg"]
-
-[node name="test" type="Node2D"]
-script = ExtResource("1_errlg")

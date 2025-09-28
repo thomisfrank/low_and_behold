@@ -18,7 +18,6 @@ CardScale = Vector2(0.5, 0.5)
 card_draw_flip_duration = 0.2
 card_draw_move_duration = 0.2
 card_draw_rotation = 0.8
-metadata/_edit_horizontal_guides_ = [540.0, 190.0]
 
 [node name="UILayer" type="CanvasLayer" parent="."]
 layer = -50
@@ -38,7 +37,6 @@ offset_left = 68.0
 offset_top = 124.0
 offset_right = 68.0
 offset_bottom = 124.0
-fills_visible = false
 
 [node name="RoundCounter" parent="UILayer" instance=ExtResource("6_tefeu")]
 offset_left = 1634.0
@@ -47,12 +45,10 @@ offset_right = 1634.0
 offset_bottom = 492.0
 round_count = 1
 
-[node name="DetailBox" parent="UILayer" instance=ExtResource("7_o6xl0")]
+[node name="detail_box" parent="UILayer" instance=ExtResource("7_o6xl0")]
 visible = false
-offset_left = 375.0
-offset_top = 418.0
-offset_right = 375.0
-offset_bottom = 418.0
+material = null
+box_offset = Vector2(-220, -220)
 
 [node name="GameLayer" type="Node2D" parent="."]
 
@@ -71,16 +67,10 @@ grow_vertical = 2
 scale = Vector2(0.42000002, 0.42000002)
 
 [node name="PlayerHand" parent="GameLayer" instance=ExtResource("4_tbgi4")]
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-offset_left = 637.99994
-offset_top = 673.0
-offset_right = 2056.1816
-offset_bottom = 1409.3636
-grow_vertical = 0
-scale = Vector2(0.44, 0.44)
+slot_positions = Array[Vector2]([Vector2(600, 840), Vector2(740, 820), Vector2(880, 795), Vector2(1032, 795)])
+slot_scales = Array[Vector2]([Vector2(0.5, 0.5), Vector2(0.5, 0.5), Vector2(0.5, 0.5), Vector2(0.5, 0.5)])
+hover_scale = 1.4
+hover_position_offset = Vector2(-200, -300)
 
 [node name="opponent_hand" parent="GameLayer" instance=ExtResource("8_tipki")]
 offset_left = 51.0

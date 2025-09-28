@@ -23,6 +23,10 @@ class_name PlayerHand
 @export var displacement_amount: float = 80.0
 @export var hover_duration: float = 0.2
 
+# New exports for hover position and rotation
+@export var hover_position_offset: Vector2 = Vector2(0, -100)
+@export var hover_rotation: float = 0.0
+
 ## === PlayerHand: Internal State ===
 # This array will now hold the ACTUAL card nodes, not placeholders.
 var managed_cards: Array[Node] = []
@@ -33,11 +37,8 @@ var hover_tween: Tween
 
 ## === PlayerHand: Initialization ===
 func _ready():
-	# Set this container to span the screen to capture mouse events
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_PASS
-
-	# Initialize the arrays to the maximum card count
 	managed_cards.resize(max_cards)
 	card_data_map.resize(max_cards)
 	for i in range(max_cards):
@@ -84,8 +85,9 @@ func receive_card_node(card_node: Control, slot_index: int, card_data: CustomCar
 	card_node.position = slot_positions[slot_index]
 	card_node.scale = slot_scales[slot_index]
 	card_node.rotation_degrees = slot_rotations[slot_index]
-	# Set Z-index to ensure cards overlap correctly and can be hovered
+	# Set Z-index so cards stack left-to-right, first card at the bottom
 	card_node.z_index = max_cards - slot_index
+
 	
 ## === PlayerHand: Hover System ===
 
@@ -107,10 +109,15 @@ func _get_topmost_card_under_mouse() -> int:
 func _on_card_hover_start(card_index: int):
 	hovered_index = card_index
 	_animate_hover(card_index)
+	# Show detail box via UIManager
+	if card_data_map[card_index] and managed_cards[card_index]:
+		UIManager.show_card_detail(card_data_map[card_index], managed_cards[card_index])
 
 func _on_card_hover_end():
 	hovered_index = -1
 	_animate_hover(-1) # Animate back to default state
+	# Hide detail box via UIManager
+	UIManager.hide_card_detail()
 
 func _animate_hover(target_index: int):
 	if hover_tween:
@@ -124,27 +131,31 @@ func _animate_hover(target_index: int):
 
 		var target_pos = slot_positions[i]
 		var target_scale = slot_scales[i]
+		var target_rot = slot_rotations[i]
 		var target_z = i # Default Z-index
 
 		if target_index != -1: # A card is being hovered
 			if i == target_index:
-				# This is the hovered card, so lift and enlarge it
-				target_pos += Vector2(0, hover_lift)
+				target_pos += hover_position_offset
 				target_scale *= hover_scale
-				target_z = 100 # Bring to front
+				target_rot = hover_rotation
+				target_z = 100 # Temporarily bring to front
 			else:
-				# Displace adjacent cards
 				var displacement = Vector2.ZERO
 				if i < target_index:
 					displacement.x = -displacement_amount
 				else:
 					displacement.x = displacement_amount
 				target_pos += displacement
-		
 		# Animate the properties
 		hover_tween.tween_property(card, "position", target_pos, hover_duration)
 		hover_tween.tween_property(card, "scale", target_scale, hover_duration)
-		card.z_index = target_z
+		hover_tween.tween_property(card, "rotation_degrees", target_rot, hover_duration)
+		# Set stacking order: hovered card gets 100, others get their slot index
+		if target_index != -1 and i == target_index:
+			card.z_index = 100
+		else:
+			card.z_index = max_cards - i
 
 ## === PlayerHand: Public API (for GameManager) ===
 

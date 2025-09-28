@@ -12,51 +12,47 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_hand_script")
 slot_positions = Array[Vector2]([Vector2(600, 840), Vector2(720, 820), Vector2(840, 795), Vector2(1012, 795)])
-slot_rotations = Array[float]([-3.5, -3.5, 6.5, 9.5])
+slot_rotations = Array[float]([-2.0, 1.0, 6.5, 9.5])
 slot_scales = Array[Vector2]([Vector2(0.8, 0.8), Vector2(0.8, 0.8), Vector2(0.8, 0.8), Vector2(0.8, 0.8)])
 
 [node name="HandSlot1" parent="." instance=ExtResource("1_4moqc")]
 z_index = 3
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.18020834
-anchor_top = 0.7814815
-anchor_right = 0.721875
-anchor_bottom = 2.1148148
-offset_left = -80.0
-offset_right = -80.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.4, 0.4)
 
 [node name="HandSlot2" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
 z_index = 2
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.31041667
-anchor_top = 0.7740741
-anchor_right = 0.8520833
-anchor_bottom = 2.1074073
-offset_left = -80.0
-offset_right = -80.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.4, 0.4)
 
 [node name="HandSlot3" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
 z_index = 1
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.42395833
-anchor_top = 0.7740741
-anchor_right = 0.965625
-anchor_bottom = 2.1074073
-offset_left = -80.0
-offset_right = -80.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.4, 0.4)
 
 [node name="HandSlot4" parent="." instance=ExtResource("1_4moqc")]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.546875
-anchor_top = 0.7740741
-anchor_right = 1.0885416
-anchor_bottom = 2.1074073
-offset_left = -80.0
-offset_right = -80.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.4, 0.4)

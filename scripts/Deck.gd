@@ -30,7 +30,7 @@ func _ready():
 	print("[Deck] _ready() - ", get_path())
 
 	# SubViewportContainer input config
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = Control.MOUSE_FILTER_PASS
 	stretch = true
 	var subviewport = $DeckViewport
 	if subviewport:

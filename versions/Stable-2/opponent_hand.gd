@@ -1,0 +1,1 @@
+This is a placeholder for the Stable-2 backup of opponent_hand.gd.
