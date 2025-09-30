@@ -20,12 +20,16 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ya4ey"]
 shader = ExtResource("1_ya4ey")
 shader_parameter/pixel_size = 2.0
-shader_parameter/scanline_darkness = 0.134000006365
-shader_parameter/scanline_spacing = 2.918000091105
-shader_parameter/curvature_amount = 0.1330000063175
-shader_parameter/aberration_amount = 0.01
-shader_parameter/noise_amount = 0.150000007125
-shader_parameter/overlay_strength = 0.1350000064125
+shader_parameter/scanline_darkness = 0.1070000050825
+shader_parameter/scanline_spacing = 3.250000106875
+shader_parameter/curvature_amount = 0.258000012255
+shader_parameter/aberration_amount = 0.0050000002375
+shader_parameter/noise_amount = 0.1330000063175
+shader_parameter/overlay_strength = 0.2410000114475
+shader_parameter/bloom_threshold = 0.278000013205
+shader_parameter/bloom_intensity = 0.1230000058425
+shader_parameter/flicker_amount = 0.12800000608
+shader_parameter/flicker_speed = 2.9510001401725
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_eb6dy"]
 viewport_path = NodePath("SubViewport")
