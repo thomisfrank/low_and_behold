@@ -9,6 +9,8 @@ extends Control
 signal round_changed(new_round: int)
 
 # Current round
+### Current round
+# round_count: Current round number
 @export var round_count: int = 0
 
 # UI node reference

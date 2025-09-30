@@ -1,8 +1,8 @@
 shader_type canvas_item;
 
-// Controls the overall strength of the glitch effect
+// strength: Controls the overall strength of the glitch effect
 uniform float strength : hint_range(0.0, 1.0) = 0.1;
-// How much the color channels separate (chromatic aberration)
+// aberration_amount: How much the color channels separate (chromatic aberration)
 uniform float aberration_amount : hint_range(0.0, 1.0) = 0.05;
 
 // A simple pseudo-random number generator

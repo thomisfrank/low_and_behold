@@ -20,12 +20,16 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ya4ey"]
 shader = ExtResource("1_ya4ey")
 shader_parameter/pixel_size = 2.0
-shader_parameter/scanline_darkness = 0.134000006365
-shader_parameter/scanline_spacing = 2.918000091105
+shader_parameter/scanline_darkness = 0.818000038855
+shader_parameter/scanline_spacing = 6.4870002606325
 shader_parameter/curvature_amount = 0.1330000063175
-shader_parameter/aberration_amount = 0.01
+shader_parameter/aberration_amount = 0.006000000285
 shader_parameter/noise_amount = 0.150000007125
-shader_parameter/overlay_strength = 0.1350000064125
+shader_parameter/overlay_strength = 0.0890000042275
+shader_parameter/bloom_threshold = 0.4890000232275
+shader_parameter/bloom_intensity = 0.1690000080275
+shader_parameter/flicker_amount = 0.0790000037525
+shader_parameter/flicker_speed = 11.2450005341375
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_eb6dy"]
 viewport_path = NodePath("SubViewport")
@@ -36,7 +40,7 @@ card_data_path = "uid://b32vnfrr06ful"
 card_key = "TwoSwap"
 CardPosition = Vector2(960, 540)
 CardScale = Vector2(0.5, 0.5)
-first_player = 1
+first_player = 2
 overlay_duration = 1.5
 card_draw_flip_duration = 0.2
 card_draw_move_duration = 0.2

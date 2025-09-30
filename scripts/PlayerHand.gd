@@ -6,19 +6,30 @@ extends Control
 class_name PlayerHand
 
 # Layout & settings
-@export_group("Hand Layout")
+### Hand Layout
+# slot_positions: Array of Vector2 positions for hand slots (layout)
 @export var slot_positions: Array[Vector2] = [Vector2(480, 50), Vector2(640, 50), Vector2(800, 50), Vector2(960, 50)]
+# slot_rotations: Array of float values for slot rotations (layout)
 @export var slot_rotations: Array[float] = [0.0, 0.0, 0.0, 0.0]
+# slot_scales: Array of Vector2 scales for each slot (layout)
 @export var slot_scales: Array[Vector2] = [Vector2.ONE, Vector2.ONE, Vector2.ONE, Vector2.ONE]
-@export_group("Hand Behavior")
+### Hand Behavior
+# max_cards: Maximum number of cards in the player's hand
 @export var max_cards: int = 4
-@export_group("Hover Effects")
+### Hover Effects
+# hover_scale: Scale factor when hovering a card
 @export var hover_scale: float = 1.5
+# hover_lift: Vertical offset when hovering a card
 @export var hover_lift: float = -100.0
+# displacement_amount: Amount to displace cards for visual effect
 @export var displacement_amount: float = 80.0
+# hover_duration: Duration of hover animation
 @export var hover_duration: float = 0.2
+# hover_margin: Margin for hover effect
 @export var hover_margin: float = 8.0
+# hover_position_offset: Position offset for hovered cards
 @export var hover_position_offset: Vector2 = Vector2(0, -100)
+# hover_rotation: Rotation applied on hover
 @export var hover_rotation: float = 0.0
 
 # Internal state
@@ -125,6 +136,24 @@ func get_card_count() -> int:
 			count += 1
 	return count
 
+func get_hand_total() -> int:
+	# Sum numeric values from card_data_map if present
+	var total = 0
+	for i in range(card_data_map.size()):
+		var data = card_data_map[i]
+		if data:
+			if data.has_method("get"):
+				# resource-style access
+				if data.has("effect_value"):
+					total += int(data.effect_value)
+				elif data.has("value"):
+					total += int(data.value)
+			else:
+				# Fallback: try dictionary-like access
+				if "effect_value" in data:
+					total += int(data.effect_value)
+	return total
+
 # Get the last played Swap card slot (for swap effect)
 func get_last_played_swap_slot():
 	for i in range(managed_cards.size()-1, -1, -1):
@@ -133,6 +162,22 @@ func get_last_played_swap_slot():
 		if is_instance_valid(card) and data and data.get("effect") == "Swap":
 			return card
 	return null
+
+func get_card_node(index: int) -> Node:
+	if index >= 0 and index < managed_cards.size():
+		return managed_cards[index]
+	return null
+
+func get_card_data(index: int) -> CustomCardData:
+	if index >= 0 and index < card_data_map.size():
+		return card_data_map[index]
+	return null
+
+func get_first_filled_slot_index() -> int:
+	for i in range(managed_cards.size()):
+		if is_instance_valid(managed_cards[i]):
+			return i
+	return -1
 
 # Lock/unlock a card at the given index
 func lock_card(card_index: int):

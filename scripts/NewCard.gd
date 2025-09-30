@@ -6,6 +6,8 @@
 extends Control
 
 # Debug logging toggle
+### Debug logging toggle
+# debug_logging: Toggle for debug print statements
 @export var debug_logging: bool = false
 
 # UI node references

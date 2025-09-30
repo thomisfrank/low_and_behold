@@ -5,14 +5,20 @@
 # =====================================
 extends Control
 
-# Layout configuration
+### Layout configuration
+# slot_positions: Array of Vector2 positions for opponent hand slots (layout)
+# slot_rotations: Array of float values for slot rotations (layout)
+# slot_scales: Array of Vector2 scales for each slot (layout)
 @export_group("Hand Layout")
 @export var slot_positions: Array[Vector2] = [Vector2(688, 835), Vector2(805, 840), Vector2(912, 830), Vector2(1019, 835)]
 @export var slot_rotations: Array[float] = [0.0, 0.0, 0.0, 0.0]
 @export var slot_scales: Array[Vector2] = [Vector2(0.32, 0.32), Vector2(0.32, 0.32), Vector2(0.32, 0.32), Vector2(0.32, 0.32)]
 @export_group("Hand Behavior")
+# max_cards: Maximum number of cards in the opponent's hand
 @export var max_cards: int = 4
+# auto_arrange: Automatically arrange cards in hand
 @export var auto_arrange: bool = true
+# debug_layout: Toggle for debug layout print statements
 @export var debug_layout: bool = false
 
 # Internal state
@@ -120,6 +126,25 @@ func get_card_node(index: int) -> Node:
 	if index >= 0 and index < hand_slots.size():
 		return hand_slots[index]
 	return null
+
+func get_hand_total() -> int:
+	var total = 0
+	for slot in hand_slots:
+		if slot and slot.visible:
+			var data = null
+			if slot.has_meta("hidden_card_data"):
+				data = slot.get_meta("hidden_card_data")
+			elif slot.has_method("get_meta") and slot.has_meta("card_data"):
+				data = slot.get_meta("card_data")
+			if data:
+				if data.has_method("get"):
+					if data.has("effect_value"):
+						total += int(data.effect_value)
+					elif data.has("value"):
+						total += int(data.value)
+				elif "effect_value" in data:
+					total += int(data.effect_value)
+	return total
 
 func clear_hand():
 	for slot in hand_slots:

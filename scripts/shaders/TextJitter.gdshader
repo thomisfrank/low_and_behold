@@ -1,6 +1,8 @@
 shader_type canvas_item;
 
+// jitter_rate: Speed of text jitter
 uniform float jitter_rate : hint_range(1.0, 30.0) = 8.0;
+// jitter_amount: Amount of text jitter
 uniform float jitter_amount : hint_range(0.0, 0.02) = 0.003;
 
 // Hash function: gives more "random"-looking values than plain sin

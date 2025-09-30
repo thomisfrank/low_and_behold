@@ -6,9 +6,14 @@
 extends Control
 
 # Animation and box config
+### Animation and box config
+# jitter_duration: Duration of jitter animation for detail box
 @export var jitter_duration: float = 0.3
+# jitter_amount: Amount of jitter for detail box
 @export var jitter_amount: float = 2.0
+# box_size: Size of the detail box
 @export var box_size: Vector2 = Vector2(220, 220)
+# box_offset: Offset for detail box position
 @export var box_offset: Vector2 = Vector2(68.0, 0)
 
 # Internal state

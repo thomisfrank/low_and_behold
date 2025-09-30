@@ -1,15 +1,15 @@
 shader_type canvas_item;
 
-// Define your two main colors for the gradient
+// color_a: Inner color for radial gradient
 uniform vec4 color_a : source_color = vec4(0.149, 0.682, 0.373, 1.0); // Inner color (#26ae5f)
+// color_b: Outer color for radial gradient
 uniform vec4 color_b : source_color = vec4(0.161, 0.686, 0.380, 1.0); // Outer color (#29AF61)
 
-// --- Control Parameters ---
-// How fast the blob wanders
+// speed: How fast the blob wanders
 uniform float speed = 0.3;
-// How far the blob's center moves from the card's center
+// intensity: How far the blob's center moves from the card's center
 uniform float intensity = 0.3;
-// How soft or sharp the gradient's edge is
+// sharpness: How soft or sharp the gradient's edge is
 uniform float sharpness = 1.5;
 
 void fragment() {

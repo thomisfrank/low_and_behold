@@ -1,0 +1,19 @@
+name: Check CardAnimator Autoload
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check-autoload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert CardAnimator autoload
+        run: |
+          if ! grep -q 'CardAnimator="*res://scripts/CardAnimator.gd"' project.godot; then
+            echo "CardAnimator autoload entry not found in project.godot. Please add:\nCardAnimator=\"*res://scripts/CardAnimator.gd\"\n"
+            exit 1
+          else
+            echo "CardAnimator autoload present."
+          fi

@@ -1,6 +1,6 @@
 shader_type canvas_item;
 
-// This uniform lets us control the speed from the Godot editor
+// scroll_speed: Controls the speed and direction of the background scroll animation
 uniform vec2 scroll_speed = vec2(0.02, 0.01);
 
 void fragment() {

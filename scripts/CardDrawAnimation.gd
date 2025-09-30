@@ -5,6 +5,7 @@
 # =====================================
 extends Node2D
 class_name CardDrawAnimation
+### Debug logging toggle
 @export var debug_logging: bool = false
 
 # Emits when animation finishes
@@ -15,20 +16,33 @@ const CardScene = preload("res://scenes/cards.tscn")
 const CardScript = preload("res://scripts/NewCard.gd")
 
 # Animation parameters
+### Animation parameters
+# flip_duration: Duration of card flip animation
 @export var flip_duration: float = 0.8
+# move_duration: Duration of card move animation
 @export var move_duration: float = 1.2
+# total_frames: Number of frames in animation
 @export var total_frames: int = 8
+# rotation_angle: Angle for card rotation during animation
 @export var rotation_angle: float = 15.0
+# final_scale: Final scale of card after animation
 @export var final_scale: Vector2 = Vector2(0.8, 0.8)
+# max_rotation_during_move: Maximum rotation during move
 @export var max_rotation_during_move: float = 10.0
 
 # Tween configuration
+### Tween configuration
+# tween_ease: Tween easing type
 @export var tween_ease: int = Tween.EASE_IN_OUT
+# tween_trans: Tween transition type
 @export var tween_trans: int = Tween.TRANS_CUBIC
 
 # Behavior toggles
-@export var auto_free: bool = true  # Free animator node after animation completes
-@export var use_canvas_layer: bool = false  # Render animation in a CanvasLayer above UI
+### Behavior toggles
+# auto_free: Free animator node after animation completes
+@export var auto_free: bool = true
+# use_canvas_layer: Render animation in a CanvasLayer above UI
+@export var use_canvas_layer: bool = false
 
 # Runtime state
 var animating_card: Control
@@ -174,8 +188,19 @@ func _exit_tree() -> void:
 		move_tween.kill()
 
 
-static func create_draw_animation(parent: Node, deck_pos: Vector2, hand_pos: Vector2, card_data: CustomCardData, final_rotation: float = 0.0, end_scale: Vector2 = Vector2.ONE, from_scale: Vector2 = Vector2.ONE) -> CardDrawAnimation:
+static func create_draw_animation(parent: Node, deck_pos: Vector2, hand_pos: Vector2, card_data: CustomCardData, final_rotation: float = 0.0, end_scale: Vector2 = Vector2.ONE, from_scale: Vector2 = Vector2.ONE, flip_dur: float = -1.0, move_dur: float = -1.0, ease_override: int = -1, trans_override: int = -1, rot_angle_override: float = NAN) -> CardDrawAnimation:
 	var animator = CardDrawAnimation.new()
 	parent.add_child(animator)
+	# Apply overrides if provided
+	if flip_dur > 0:
+		animator.flip_duration = flip_dur
+	if move_dur > 0:
+		animator.move_duration = move_dur
+	if ease_override >= 0:
+		animator.tween_ease = ease_override
+	if trans_override >= 0:
+		animator.tween_trans = trans_override
+	if rot_angle_override == rot_angle_override:
+		animator.rotation_angle = rot_angle_override
 	animator.animate_card_draw(card_data, deck_pos, hand_pos, final_rotation, end_scale, from_scale)
 	return animator

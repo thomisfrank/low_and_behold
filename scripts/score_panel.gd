@@ -6,8 +6,12 @@
 extends Control
 
 # Configuration
+### Configuration
+# debug: Toggle for debug print statements
 @export var debug: bool = false
+# label_prefix: Prefix for score label
 @export var label_prefix: String = "Score: "
+# fills_visible: Show/hide fill indicators
 @export var fills_visible: bool = true
 
 # Internal state

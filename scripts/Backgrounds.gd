@@ -8,12 +8,20 @@ extends Node
 
 
 # Configuration
+### Configuration
+# randomize_on_ready: Randomize background on ready
 @export var randomize_on_ready: bool = true
+# randomize_shader_speed: Randomize shader speed for backgrounds
 @export var randomize_shader_speed: bool = true
+# shader_speed_min: Minimum shader speed
 @export var shader_speed_min: float = 0.002
+# shader_speed_max: Maximum shader speed
 @export var shader_speed_max: float = 0.02
+# randomize_direction: Randomize scroll direction for background
 @export var randomize_direction: bool = true
+# random_flip: Randomly flip background
 @export var random_flip: bool = false
+# debug_logging: Toggle for debug print statements
 @export var debug_logging: bool = false
 
 #-----------------------------------------------------------------------------

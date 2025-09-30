@@ -1,6 +1,8 @@
 shader_type canvas_item;
 
+// jitter_amount: Amount of pixel jitter
 uniform float jitter_amount : hint_range(0.0, 10.0) = 2.0;
+// jitter_rate: Speed of jitter animation
 uniform float jitter_rate : hint_range(0.0, 20.0) = 8.0;
 
 void fragment() {
