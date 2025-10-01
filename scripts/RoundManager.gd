@@ -1,6 +1,6 @@
 extends Node
 
-# RoundManager - orchestrates rounds, turns, and coordinates services
+# RoundManager: orchestrates rounds, turns, and services
 signal round_started(round_number: int)
 signal turn_started(player_id: int)
 signal turn_ended(player_id: int)
@@ -15,8 +15,16 @@ var current_round: int = 1
 var current_player: int = 1
 var actions_left: int = 2
 var max_actions_per_turn: int = 2
-var first_player: int = 0
+# Who starts the round (Inspector-friendly dropdown):
+# 0 = Random, 1 = Player, 2 = Opponent
+enum FirstPlayer { Random, Player, Opponent }
+# Inspector-friendly selection for who starts the round (Random/Player/Opponent)
+@export var first_player: int = FirstPlayer.Random
 var debug_logging: bool = true
+
+# Internal guard: when true, start_turn will queue the request instead of executing it.
+var _suspend_turns: bool = false
+var _pending_start_player: int = -1
 
 # Internal refs to hand nodes (optional caching)
 var player_hand_node: Node = null
@@ -29,7 +37,39 @@ var _swap_stage: int = 0 # 0=to play area, 1=to target slots
 var _player_card_at_play_area: bool = false
 var _action_resolver: Node = null
 var _opponent_ai: Node = null
+
+# Purpose: manage turn/round flow, AI, and hand/deck interactions
 var _hand_controller: Node = null
+# Internal counters used to synchronize auto-draw completion for opponent
+var _rm_expected_opponent_draws: int = 0
+var _rm_completed_opponent_draws: int = 0
+
+# Helper: robustly count number of cards in a hand node.
+func _count_hand_cards(hand_node: Node) -> int:
+	if not hand_node:
+		return 0
+	# 1) Prefer HandController if available
+	if _hand_controller and _hand_controller.has_method("get_card_count"):
+		var c = _hand_controller.get_card_count(hand_node)
+		if c != 0:
+			return c
+	# 2) If the hand node itself exposes get_card_count, use it
+	if hand_node.has_method("get_card_count"):
+		var c2 = hand_node.get_card_count()
+		if c2 != 0:
+			return c2
+	# 3) Fallback: inspect known slot nodes for 'hidden_card_data' or 'card_data'
+	var found = 0
+	for child in hand_node.get_children():
+		if child and child is Node:
+			if child.has_meta("hidden_card_data") or child.has_meta("card_data"):
+				found += 1
+			elif child.visible and child.has_method("has_method") and child.has_method("get_child"):
+				# try deeper search for nested slot nodes
+				for desc in child.get_children():
+					if desc and desc.has_meta and desc.has_meta("hidden_card_data"):
+						found += 1
+	return found
 
 func _ready() -> void:
 	# Connect our own request_deal signal to an internal handler so RoundManager
@@ -50,6 +90,7 @@ func _ready() -> void:
 	if not root.get_node_or_null("/root/OpponentAI"):
 		var ai_scene = load("res://scripts/OpponentAI.gd")
 		_opponent_ai = ai_scene.new()
+		_opponent_ai.name = "OpponentAI"
 		root.call_deferred("add_child", _opponent_ai)
 	else:
 		_opponent_ai = root.get_node_or_null("/root/OpponentAI")
@@ -96,8 +137,39 @@ func start_round():
 	if debug_logging:
 		print("[RM] Starting round %d; player %d starts" % [current_round, current_player])
 	emit_signal("round_started", current_round)
-	# Auto-draw hands and then start the first turn
+	# Give the GameManager time to show the round-start overlay.
+	var gm = get_tree().get_root().find_child("GameManager", true, false)
+	var round_wait: float = 0.8
+	var turn_wait: float = 0.8
+	if gm:
+		if "round_overlay_duration" in gm:
+			round_wait = float(gm.round_overlay_duration)
+		elif "overlay_duration" in gm:
+			# backward compatibility
+			round_wait = float(gm.overlay_duration)
+		if "turn_overlay_duration" in gm:
+			turn_wait = float(gm.turn_overlay_duration)
+		elif "overlay_duration" in gm:
+			turn_wait = float(gm.overlay_duration)
+	# Wait for overlay to hide (prefer signals) so animations do not overlap overlays
+	var gm_node = get_tree().get_root().find_child("GameManager", true, false)
+	if gm_node and gm_node.has_signal("overlay_hidden"):
+		# await the overlay_hidden signal once
+		await gm_node.wait_for_signal("overlay_hidden")
+	else:
+		await get_tree().create_timer(round_wait).timeout
+	# Perform auto-draws for hands (opponent then player) before starting the first turn.
+	# This prevents card draw completion from consuming the first turn's actions
+	# and avoids a second `turn_started` being emitted during the draw sequence.
 	await _auto_draw_hands()
+
+	# Start the first turn (this will emit turn_started and let GameManager show turn overlay)
+	start_turn(current_player)
+	# Wait for the turn overlay to hide before proceeding
+	if gm_node and gm_node.has_signal("overlay_hidden"):
+		await gm_node.wait_for_signal("overlay_hidden")
+	else:
+		await get_tree().create_timer(turn_wait).timeout
 	# Connect to Deck signals for resolving animations
 	var deck = get_tree().get_current_scene().find_child("Deck", true, false)
 	if deck:
@@ -105,7 +177,6 @@ func start_round():
 			deck.connect("card_animation_finished", Callable(self, "_on_card_animation_finished"))
 		if deck.has_signal("card_drawn"):
 			deck.connect("card_drawn", Callable(self, "_on_deck_card_drawn"))
-	start_turn(current_player)
 
 	# Grab services if present
 	var root = get_tree().get_root()
@@ -127,15 +198,50 @@ func _auto_draw_hands() -> void:
 		push_warning("[RM] _auto_draw_hands: no current scene available after waiting; aborting auto-draw")
 		return
 	player_hand_node = scene.find_child("PlayerHand", true, false)
+	if debug_logging:
+		print("[RM] _auto_draw_hands: opponent=", opponent_hand_node, " player=", player_hand_node)
+	# Suspend turn transitions while auto-drawing to avoid mid-draw turn changes
+	_suspend_turns = true
 	opponent_hand_node = scene.find_child("opponent_hand", true, false)
 	if opponent_hand_node:
 		if debug_logging:
 			print("[RM] Dealing", opponent_hand_node.max_cards, "cards to OpponentHand")
+		# Prepare synchronization counters
+		_rm_expected_opponent_draws = opponent_hand_node.max_cards
+		_rm_completed_opponent_draws = 0
+		var deck = null
+		if get_tree().get_current_scene():
+			deck = get_tree().get_current_scene().find_child("Deck", true, false)
+		if not deck:
+			deck = get_node_or_null("/root/Deck")
+		if deck and deck.has_signal("card_animation_finished"):
+			# Connect to Deck so we observe when opponent slot animations finish
+			if not deck.is_connected("card_animation_finished", Callable(self, "_on_deck_card_animation_observed")):
+				deck.connect("card_animation_finished", Callable(self, "_on_deck_card_animation_observed"))
+
 		for i in range(opponent_hand_node.max_cards):
 			if debug_logging:
 				print("[RM] OpponentHand auto-draw card", i)
 			emit_signal("request_deal", opponent_hand_node, i)
-	await get_tree().create_timer(0.3).timeout
+			# small spacing between opponent draws (0.5s)
+			await get_tree().create_timer(0.5).timeout
+
+		# Wait for all expected opponent draw animations to complete (timeout to avoid hang)
+		if deck and deck.has_signal("card_animation_finished"):
+			var waited := 0.0
+			var timeout := 5.0
+			while _rm_completed_opponent_draws < _rm_expected_opponent_draws and waited < timeout:
+				await get_tree().create_timer(0.1).timeout
+				waited += 0.1
+			if debug_logging:
+				print("[RM] Observed opponent draw completions:", _rm_completed_opponent_draws, "of", _rm_expected_opponent_draws, " waited=", waited)
+			# Disconnect our observer to avoid leaking connections
+			if deck.is_connected("card_animation_finished", Callable(self, "_on_deck_card_animation_observed")):
+				deck.disconnect("card_animation_finished", Callable(self, "_on_deck_card_animation_observed"))
+
+	# short gap between opponent and player draws (0.5s)
+	await get_tree().create_timer(0.5).timeout
+
 	if player_hand_node:
 		if debug_logging:
 			print("[RM] Dealing", player_hand_node.max_cards, "cards to PlayerHand")
@@ -143,11 +249,54 @@ func _auto_draw_hands() -> void:
 			if debug_logging:
 				print("[RM] PlayerHand auto-draw card", i)
 			emit_signal("request_deal", player_hand_node, i)
+			# small spacing between player draws (0.5s)
+			await get_tree().create_timer(0.5).timeout
+
+	if debug_logging:
+		print("[RM] _auto_draw_hands: finished emitting deals for opponent and player")
+
+	# Diagnostic: print opponent slot metadata to help debug AI decisions
+	if debug_logging and opponent_hand_node:
+		for i in range(opponent_hand_node.get_card_count()):
+			var sn = null
+			if opponent_hand_node.has_method("get_card_node"):
+				sn = opponent_hand_node.get_card_node(i)
+			else:
+				sn = opponent_hand_node.get_slot(i) if opponent_hand_node.has_method("get_slot") else null
+			if not sn:
+				print("[RM] OppSlot", i, " -> no node")
+				continue
+			var has_hidden = sn.has_meta("hidden_card_data")
+			var has_card = sn.has_meta("card_data")
+			var meta_val = null
+			if has_hidden:
+				meta_val = sn.get_meta("hidden_card_data")
+			elif has_card:
+				meta_val = sn.get_meta("card_data")
+			print("[RM] OppSlot", i, " visible=", sn.visible, " has_hidden=", has_hidden, " has_card=", has_card, " meta=", meta_val)
+
+	# Auto-draws complete; resume normal turn handling and apply any queued start
+	_suspend_turns = false
+	if _pending_start_player != -1:
+		var queued = _pending_start_player
+		_pending_start_player = -1
+		if debug_logging:
+			print("[RM] Applying queued start_turn for player", queued)
+		start_turn(queued)
 
 func start_turn(player_id: int) -> void:
+	# If turns are currently suspended (e.g., during auto-draw), queue the start
+	if _suspend_turns:
+		if debug_logging:
+			print("[RM] start_turn queued for player", player_id)
+		_pending_start_player = player_id
+		return
+
 	current_player = player_id
 	actions_left = max_actions_per_turn
 	state = State.TURN_ACTIVE
+	if debug_logging:
+		print("[RM] start_turn -> player=", player_id, " actions_left=", actions_left)
 	emit_signal("turn_started", player_id)
 	# If it's the opponent's turn, kick off the opponent AI flow
 	if player_id != 1:
@@ -519,7 +668,7 @@ func _end_turn() -> void:
 func _on_card_animation_finished(hand_node: Node, slot_index: int, card_data: CustomCardData) -> void:
 	# Called when Deck emits that a card animation finished.
 	if debug_logging:
-		print("[RM] Card animation finished for hand", hand_node, "slot", slot_index, "card", card_data)
+		print("[RM] Card animation finished for hand", hand_node, "slot", slot_index, "card", card_data, " _pending_action=", _pending_action, " actions_left=", actions_left)
 	# If we had a pending action (draw), resolve it now
 	if _pending_action != null and _pending_action.type == "draw":
 		_pending_action = null
@@ -594,149 +743,88 @@ func _on_deck_card_drawn(card_meta: Dictionary) -> void:
 	if debug_logging:
 		print("[RM] Deck card_drawn:", card_meta)
 
+func _on_deck_card_animation_observed(hand_node: Node, slot_index: int, _card_data: CustomCardData) -> void:
+	# Observe Deck's card_animation_finished events and count opponent completions
+	if not hand_node:
+		return
+	# Only count opponent hand completions for the auto-draw synchronization
+	var scene = get_tree().get_current_scene()
+	var opp = opponent_hand_node if opponent_hand_node else (scene.find_child("opponent_hand", true, false) if scene else null)
+	if hand_node == opp:
+		_rm_completed_opponent_draws += 1
+		if debug_logging:
+			print("[RM] _on_deck_card_animation_observed: opponent slot", slot_index, "completed ->", _rm_completed_opponent_draws)
+
 func _execute_opponent_turn() -> void:
 	# Borrowed logic from GameManager for opponent actions; operates on scene hand nodes.
 	if debug_logging:
 		print("[RM] Executing opponent's turn.")
+	# Small safety delay to allow any pending auto-draw reparent/display operations to complete.
+	# This helps avoid a race where the hand reports zero cards immediately after draws.
+	await get_tree().create_timer(0.1).timeout
 	await get_tree().create_timer(1.0).timeout
-	# If an OpponentAI service is available, use it to decide actions
-	var oh = opponent_hand_node if opponent_hand_node else get_tree().get_current_scene().find_child("opponent_hand", true, false)
-	var ph = player_hand_node if player_hand_node else get_tree().get_current_scene().find_child("PlayerHand", true, false)
-	if _opponent_ai and _opponent_ai.has_method("decide_next_action"):
-		for i in range(max_actions_per_turn):
-			# ensure opponent still has cards
-			var opp_count = 0
-			if _hand_controller and _hand_controller.has_method("get_card_count"):
-				opp_count = _hand_controller.get_card_count(oh)
-			elif oh and oh.has_method("get_card_count"):
-				opp_count = oh.get_card_count()
-			if not oh or opp_count == 0:
-				if debug_logging:
-					print("[RM] Opponent has no cards to play.")
-				break
-				# Ask AI for next action
-				var chosen = _opponent_ai.decide_next_action(oh, ph)
-				if not chosen or chosen.type == "pass":
-					# nothing to do
-					continue
-				# If AI returns a play action, attempt to reveal the card node briefly then perform
-				if chosen.has("slot") and oh:
-					var cnode = null
-					if _hand_controller and _hand_controller.has_method("get_card_node"):
-						cnode = _hand_controller.get_card_node(oh, int(chosen.slot))
-					elif oh.has_method("get_card_node"):
-						cnode = oh.get_card_node(int(chosen.slot))
-					var meta = null
-					if cnode and cnode.has_meta("hidden_card_data"):
-						meta = cnode.get_meta("hidden_card_data")
-						if cnode and cnode.has_method("display"):
-							cnode.display(meta)
-						# small pause for reveal
-						await get_tree().create_timer(0.6).timeout
-				# Now let RoundManager handle the action via perform_action
-				perform_action(2, chosen)
-				# brief pause between actions
-				await get_tree().create_timer(0.5).timeout
-		# End opponent turn
+	# Resolve scene hand nodes
+	var scene = get_tree().get_current_scene()
+	var oh = opponent_hand_node if opponent_hand_node else (scene.find_child("opponent_hand", true, false) if scene else null)
+	var ph = player_hand_node if player_hand_node else (scene.find_child("PlayerHand", true, false) if scene else null)
+
+	# Debug: report hand nodes and counts before calling AI
+	if debug_logging:
+		print("[RM] _execute_opponent_turn: opponent_hand=", oh, " opponent_count=", _count_hand_cards(oh), " player_hand=", ph, " player_count=", _count_hand_cards(ph))
+
+	# Ensure OpponentAI service exists and exposes the expected API. If missing, create it.
+	if not _opponent_ai or not is_instance_valid(_opponent_ai):
+		var root = get_tree().get_root()
+		var ai_scene = load("res://scripts/OpponentAI.gd")
+		_opponent_ai = ai_scene.new()
+		root.call_deferred("add_child", _opponent_ai)
+
+	if not _opponent_ai or not _opponent_ai.has_method("decide_next_action"):
+		push_warning("[RM] OpponentAI missing or does not expose decide_next_action; ending opponent turn.")
 		_end_turn()
-	else:
-		# Fallback to legacy in-line behavior if no OpponentAI available
-		if debug_logging:
-			print("[RM] No OpponentAI service available; using legacy opponent logic.")
-		# reuse existing logic by deferring to previous implementation
-		for i in range(max_actions_per_turn):
-			var oh_local = oh if oh else get_tree().get_current_scene().find_child("opponent_hand", true, false)
-			var oh_count = 0
-			if _hand_controller and _hand_controller.has_method("get_card_count"):
-				oh_count = _hand_controller.get_card_count(oh_local)
-			elif oh_local and oh_local.has_method("get_card_count"):
-				oh_count = oh_local.get_card_count()
-			if not oh_local or oh_count == 0:
-				if debug_logging:
-					print("[RM] Opponent has no cards to play.")
-				break
-			# Build index lists
-			var valid_draw_indices = []
-			var valid_swap_indices = []
-			for idx in range(oh_count):
-				var node = null
-				if _hand_controller and _hand_controller.has_method("get_card_node"):
-					node = _hand_controller.get_card_node(oh_local, idx)
-				elif oh_local and oh_local.has_method("get_card_node"):
-					node = oh_local.get_card_node(idx)
-				if node and node.has_meta("hidden_card_data"):
-					var data = node.get_meta("hidden_card_data")
-					if data.effect_type == CustomCardData.EffectType.Draw_Card:
-						valid_draw_indices.append(idx)
-					elif data.effect_type == CustomCardData.EffectType.Swap_Card:
-						valid_swap_indices.append(idx)
-			var player_hand_local = ph if ph else get_tree().get_current_scene().find_child("PlayerHand", true, false)
-			var player_count = 0
-			if _hand_controller and _hand_controller.has_method("get_card_count"):
-				player_count = _hand_controller.get_card_count(player_hand_local)
-			elif player_hand_local and player_hand_local.has_method("get_card_count"):
-				player_count = player_hand_local.get_card_count()
-			var player_has_valid_swap = player_hand_local and player_count > 0
-			var card_index = -1
-			if i == 0 and valid_draw_indices.size() > 0:
-				card_index = valid_draw_indices[randi() % valid_draw_indices.size()]
-			elif i == 1 and valid_swap_indices.size() > 0 and player_has_valid_swap:
-				card_index = valid_swap_indices[randi() % valid_swap_indices.size()]
-			elif valid_draw_indices.size() > 0:
-				card_index = valid_draw_indices[randi() % valid_draw_indices.size()]
-			elif valid_swap_indices.size() > 0 and player_has_valid_swap:
-				card_index = valid_swap_indices[randi() % valid_swap_indices.size()]
-			else:
-				if debug_logging:
-					print("[RM] Opponent has no valid card to play for action", i)
-				continue
-			var card_node = null
+		return
+
+	# Use the OpponentAI for every opponent action; legacy inline logic has been removed.
+	for i in range(max_actions_per_turn):
+		var opp_count = _count_hand_cards(oh)
+		if not oh or opp_count == 0:
+			if debug_logging:
+				print("[RM] Opponent has no cards to play.")
+			break
+
+		var chosen = _opponent_ai.decide_next_action(oh, ph)
+		if not chosen:
+			if debug_logging:
+				print("[RM] OpponentAI returned no action; skipping")
+			continue
+		var ctype = chosen.get("type", "pass")
+		if ctype == "pass":
+			if debug_logging:
+				print("[RM] OpponentAI chose to pass.")
+			continue
+
+		# If AI returns a play action with a slot, attempt a brief reveal for UX
+		if chosen.has("slot") and oh:
+			var cnode = null
 			if _hand_controller and _hand_controller.has_method("get_card_node"):
-				card_node = _hand_controller.get_card_node(oh_local, card_index)
-			elif oh_local and oh_local.has_method("get_card_node"):
-				card_node = oh_local.get_card_node(card_index)
-			var opp_card_data = null
-			if card_node and card_node.has_meta("hidden_card_data"):
-				opp_card_data = card_node.get_meta("hidden_card_data")
-				if debug_logging:
-					print("[RM] Opponent plays card at index %d with effect '%s'" % [card_index, opp_card_data.effect_type])
-				if card_node.has_method("display"):
-					card_node.display(opp_card_data)
-				await get_tree().create_timer(1.0).timeout
-				actions_left -= 1
-				emit_signal("action_performed", 2, {"type": "play", "index": card_index, "card_meta": opp_card_data})
-				match opp_card_data.effect_type:
-					CustomCardData.EffectType.Draw_Card:
-						if _hand_controller and _hand_controller.has_method("discard_card"):
-							_hand_controller.discard_card(oh_local, card_index)
-						elif oh_local and oh_local.has_method("discard_card"):
-							oh_local.discard_card(card_index)
-						emit_signal("request_deal", oh_local, card_index)
-					CustomCardData.EffectType.Swap_Card:
-						if player_count > 0:
-							var player_card_index = randi() % player_count
-							if _hand_controller and _hand_controller.has_method("discard_card"):
-								_hand_controller.discard_card(player_hand_local, player_card_index)
-								var player_card_node = null
-								if _hand_controller and _hand_controller.has_method("get_card_node"):
-									player_card_node = _hand_controller.get_card_node(player_hand_local, player_card_index)
-								elif player_hand_local and player_hand_local.has_method("get_card_node"):
-									player_card_node = player_hand_local.get_card_node(player_card_index)
-								if player_card_node and player_card_node.has_meta("card_data"):
-									if _hand_controller and _hand_controller.has_method("add_card_to_hand"):
-										_hand_controller.add_card_to_hand(oh_local, player_card_node.get_meta("card_data"))
-									else:
-										if oh_local and oh_local.has_method("add_card_to_hand"):
-											oh_local.add_card_to_hand(player_card_node.get_meta("card_data"))
-						else:
-							if _hand_controller and _hand_controller.has_method("discard_card"):
-								_hand_controller.discard_card(oh_local, card_index)
-							elif oh_local and oh_local.has_method("discard_card"):
-								oh_local.discard_card(card_index)
-					_:
-							oh_local.discard_card(card_index)
-			await get_tree().create_timer(0.5).timeout
-		_end_turn()
+				cnode = _hand_controller.get_card_node(oh, int(chosen.slot))
+			elif oh.has_method("get_card_node"):
+				cnode = oh.get_card_node(int(chosen.slot))
+			var meta = null
+			if cnode and cnode.has_meta("hidden_card_data"):
+				meta = cnode.get_meta("hidden_card_data")
+				if cnode and cnode.has_method("display"):
+					cnode.display(meta)
+				# small pause for reveal
+				await get_tree().create_timer(0.6).timeout
+
+		# Delegate execution to RoundManager so animations/resolution pipeline is respected
+		perform_action(2, chosen)
+		# brief pause between actions
+		await get_tree().create_timer(0.5).timeout
+
+	# End opponent turn after AI-driven actions
+	_end_turn()
 
 func end_round(_reason: Dictionary = {}) -> void:
 	state = State.ROUND_END
